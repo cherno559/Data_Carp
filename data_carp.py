@@ -244,7 +244,7 @@ elif menu == "Partido a partido":
             st.dataframe(top_pases, hide_index=True, use_container_width=True)
 
     with col2:
-        st.markdown("**🛡️ Quites (Tackles)**")
+        st.markdown("**🛡️ Quites**")
         if 'Quites (Tackles)' in df_p.columns:
             top_quites = df_p.nlargest(top_n, 'Quites (Tackles)')[['Jugador', 'Quites (Tackles)']]
             st.dataframe(top_quites, hide_index=True, use_container_width=True)
