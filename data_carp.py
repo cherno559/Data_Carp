@@ -157,22 +157,25 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 if menu == "Resumen General":
     st.markdown("<h1>🐔 Panel General del Equipo</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.subheader("📊 Promedios SofaScore")
-        df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
-        
-        # Mostramos la tabla directamente con los números legibles
-        st.dataframe(
-            df_promedios,
-            hide_index=True, 
-            use_container_width=True
-        )
-        
-    with c2:
+    
+    st.subheader("📊 Promedios SofaScore")
+    df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+    
+    # Muestra la tabla ocupando todo el ancho superior
+    st.dataframe(
+        df_promedios,
+        hide_index=True, 
+        use_container_width=True
+    )
+    
+    st.divider()
+    
+    # Goleadores y Asistidores divididos en dos columnas debajo de la tabla principal
+    c_goles, c_asist = st.columns(2)
+    with c_goles:
         st.subheader("⚽ Goleadores")
         st.dataframe(df_agrupado[df_agrupado['Goles'] > 0][['Jugador', 'Goles']].sort_values('Goles', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
-    with c3:
+    with c_asist:
         st.subheader("👟 Asistidores")
         st.dataframe(df_agrupado[df_agrupado['Asistencias'] > 0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
 
@@ -221,10 +224,39 @@ elif menu == "Análisis Individual":
             fig_l.update_layout(yaxis_range=[0, 11])
             st.plotly_chart(fig_l, use_container_width=True)
         with c2:
-            stats = ['Pases Clave', 'Tiros Totales', 'Quites (Tackles)', 'Intercepciones']
-            vals = df_j[stats].sum().tolist(); vals += [vals[0]]
-            fig_r = go.Figure(data=go.Scatterpolar(r=vals, theta=stats+[stats[0]], fill='toself', fillcolor='rgba(237,28,36,0.4)', line_color='#ed1c24'))
-            st.plotly_chart(fig_r, use_container_width=True)
+            st.markdown("#### 🛡️ Perfil Táctico Relativo al Plantel")
+            st.write("*(El borde exterior representa el máximo alcanzado por un jugador del equipo)*")
+            
+            # Radar Normalizado de 5 puntas
+            metrics_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones']
+            labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
+            
+            totales_jugador = [df_j[m].sum() for m in metrics_radar]
+            df_squad_totals = df_raw.groupby('Jugador')[metrics_radar].sum()
+            maximos_equipo = [df_squad_totals[m].max() for m in metrics_radar]
+            
+            valores_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(totales_jugador, maximos_equipo)]
+            
+            fig_radar = go.Figure(data=go.Scatterpolar(
+                r=valores_norm + [valores_norm[0]],
+                theta=labels_radar + [labels_radar[0]],
+                fill='toself',
+                fillcolor='rgba(237,28,36,0.3)',
+                line=dict(color='#ed1c24', width=3),
+                marker=dict(color='#ed1c24', size=8),
+                hoverinfo='text',
+                text=[f"{labels_radar[i]}: {totales_jugador[i]}" for i in range(len(labels_radar))] + [f"{labels_radar[0]}: {totales_jugador[0]}"]
+            ))
+            
+            fig_radar.update_layout(
+                polar=dict(
+                    radialaxis=dict(visible=True, range=[0, 100], showticklabels=False, gridcolor="LightGray"),
+                    angularaxis=dict(gridcolor="LightGray", tickfont=dict(size=12, family="Arial Black"))
+                ),
+                showlegend=False,
+                margin=dict(l=40, r=40, t=20, b=20)
+            )
+            st.plotly_chart(fig_radar, use_container_width=True)
 
 # ── PÁGINAS: POR FECHA ───────────────────────────────────────────────────────
 
