@@ -23,7 +23,7 @@ st.markdown("""
 # ── RUTAS DINÁMICAS (ESTO ARREGLA EL ERROR DEL EXCEL) ────────────────────────
 CARPETA = Path(__file__).parent
 
-# Buscamos cualquier archivo .xlsx en la carpeta (por si el nombre cambia un poquito)
+# Buscamos cualquier archivo .xlsx en la carpeta
 archivos_excel = list(CARPETA.glob("*.xlsx"))
 if archivos_excel:
     EXCEL = archivos_excel[0]
@@ -188,13 +188,12 @@ elif menu == "Mapa de Tiros":
     else: st.warning("Imagen no encontrada.")
 
 # -----------------------------------------------------------------------------
-# NUEVA PESTAÑA: PARTIDO A PARTIDO (TOP 7 AMPLIADO)
+# NUEVA PESTAÑA: PARTIDO A PARTIDO (TOP 7 AMPLIADO Y ORDENADO)
 # -----------------------------------------------------------------------------
 elif menu == "Partido a partido":
     st.markdown("<h1>⚽ Análisis Partido a Partido</h1>", unsafe_allow_html=True)
     st.markdown("Seleccioná un partido para ver el **Top 7** de rendimiento en las métricas clave.")
     
-    # Función para extraer el primer número de las columnas de texto ('15/20 -> 15)
     def extraer_exitosos(valor):
         try:
             if isinstance(valor, str):
@@ -203,14 +202,12 @@ elif menu == "Partido a partido":
         except:
             return 0
 
-    # Selector de partido usando la base ya cargada
     partidos = df_raw['Partido'].unique()
     partido_seleccionado = st.selectbox("Seleccioná la fecha:", partidos)
     
-    # Filtramos la base para el partido seleccionado
     df_p = df_raw[df_raw['Partido'] == partido_seleccionado].copy()
     
-    # Limpiamos las columnas con datos fraccionados ('X/Y') solo para esta vista
+    # Limpiamos las columnas con datos fraccionados ('X/Y')
     if 'Pases (Comp/Tot)' in df_p.columns:
         df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
     if 'Duelos (Gan/Tot)' in df_p.columns:
@@ -218,7 +215,11 @@ elif menu == "Partido a partido":
     if 'Regates (Exit/Tot)' in df_p.columns:
         df_p['Regates Exitosos'] = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
         
-    # Aseguramos que las efectividades sean números para poder desempatar correctamente
+    # Renombrar para que quede estéticamente limpio
+    if 'Quites (Tackles)' in df_p.columns:
+        df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
+        
+    # Aseguramos que las efectividades sean números
     cols_a_num = ['Efectividad Pases', 'Efectividad Duelos', 'Efectividad Regates', 'Tiros al Arco', 'Tiros Totales', 'Pases Clave', 'Intercepciones']
     for col in cols_a_num:
         if col in df_p.columns:
@@ -229,19 +230,40 @@ elif menu == "Partido a partido":
 
     top_n = 7
 
-    # 1. NOTA SOFASCORE
+    # ==========================
+    # 1. VALORACIÓN GENERAL
+    # ==========================
     st.markdown("### ⭐ Nota SofaScore")
     if 'Nota SofaScore' in df_p.columns:
         top_nota = df_p.nlargest(top_n, 'Nota SofaScore')[['Jugador', 'Nota SofaScore']]
         st.dataframe(top_nota, hide_index=True, use_container_width=True)
-    
-    # 2. PASES COMPLETADOS
+
+    # ==========================
+    # 2. ASPECTO DEFENSIVO
+    # ==========================
+    st.markdown("### 🛡️ Quites")
+    if 'Quites' in df_p.columns:
+        top_quites = df_p.nlargest(top_n, 'Quites')[['Jugador', 'Quites']]
+        st.dataframe(top_quites, hide_index=True, use_container_width=True)
+
+    st.markdown("### 🛑 Intercepciones")
+    if 'Intercepciones' in df_p.columns:
+        top_intercepciones = df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']]
+        st.dataframe(top_intercepciones, hide_index=True, use_container_width=True)
+
+    st.markdown("### ⚔️ Duelos Ganados")
+    if 'Duelos Ganados' in df_p.columns and 'Efectividad Duelos' in df_p.columns:
+        top_duelos = df_p.sort_values(by=['Duelos Ganados', 'Efectividad Duelos'], ascending=[False, False]).head(top_n)[['Jugador', 'Duelos Ganados', 'Efectividad Duelos']]
+        st.dataframe(top_duelos, hide_index=True, use_container_width=True)
+
+    # ==========================
+    # 3. CREACIÓN Y POSESIÓN
+    # ==========================
     st.markdown("### 🎯 Pases Completados")
     if 'Pases Completados' in df_p.columns and 'Efectividad Pases' in df_p.columns:
         top_pases = df_p.sort_values(by=['Pases Completados', 'Efectividad Pases'], ascending=[False, False]).head(top_n)[['Jugador', 'Pases Completados', 'Efectividad Pases']]
         st.dataframe(top_pases, hide_index=True, use_container_width=True)
 
-    # 3. PASES CLAVE (Acá filtramos para mostrar solo a los que tienen más de 0)
     st.markdown("### 🔑 Pases Clave")
     if 'Pases Clave' in df_p.columns:
         top_pases_clave = df_p[df_p['Pases Clave'] > 0].nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']]
@@ -250,32 +272,18 @@ elif menu == "Partido a partido":
         else:
             st.info("Ningún jugador registró pases clave en este partido.")
 
-    # 4. QUITES
-    st.markdown("### 🛡️ Quites (Tackles)")
-    if 'Quites (Tackles)' in df_p.columns:
-        top_quites = df_p.nlargest(top_n, 'Quites (Tackles)')[['Jugador', 'Quites (Tackles)']]
-        st.dataframe(top_quites, hide_index=True, use_container_width=True)
+    # ==========================
+    # 4. ATAQUE Y DEFINICIÓN
+    # ==========================
+    st.markdown("### ⚡ Regates Exitosos")
+    if 'Regates Exitosos' in df_p.columns and 'Efectividad Regates' in df_p.columns:
+        top_regates = df_p[df_p['Regates Exitosos'] > 0].sort_values(by=['Regates Exitosos', 'Efectividad Regates'], ascending=[False, False]).head(top_n)[['Jugador', 'Regates Exitosos', 'Efectividad Regates']]
+        if not top_regates.empty:
+            st.dataframe(top_regates, hide_index=True, use_container_width=True)
+        else:
+            st.info("Ningún jugador registró regates exitosos en este partido.")
 
-    # 5. INTERCEPCIONES
-    st.markdown("### 🛑 Intercepciones")
-    if 'Intercepciones' in df_p.columns:
-        top_intercepciones = df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']]
-        st.dataframe(top_intercepciones, hide_index=True, use_container_width=True)
-
-    # 6. DUELOS GANADOS
-    st.markdown("### ⚔️ Duelos Ganados")
-    if 'Duelos Ganados' in df_p.columns and 'Efectividad Duelos' in df_p.columns:
-        top_duelos = df_p.sort_values(by=['Duelos Ganados', 'Efectividad Duelos'], ascending=[False, False]).head(top_n)[['Jugador', 'Duelos Ganados', 'Efectividad Duelos']]
-        st.dataframe(top_duelos, hide_index=True, use_container_width=True)
-
-    # 7. TIROS AL ARCO
     st.markdown("### 👟 Tiros al Arco")
     if 'Tiros al Arco' in df_p.columns and 'Tiros Totales' in df_p.columns:
         top_tiros = df_p.sort_values(by=['Tiros al Arco', 'Tiros Totales'], ascending=[False, False]).head(top_n)[['Jugador', 'Tiros al Arco', 'Tiros Totales']]
         st.dataframe(top_tiros, hide_index=True, use_container_width=True)
-    
-    # 8. REGATES EXITOSOS
-    st.markdown("### ⚡ Regates Exitosos")
-    if 'Regates Exitosos' in df_p.columns and 'Efectividad Regates' in df_p.columns:
-        top_regates = df_p.sort_values(by=['Regates Exitosos', 'Efectividad Regates'], ascending=[False, False]).head(top_n)[['Jugador', 'Regates Exitosos', 'Efectividad Regates']]
-        st.dataframe(top_regates, hide_index=True, use_container_width=True)
