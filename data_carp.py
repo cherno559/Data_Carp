@@ -157,25 +157,22 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 if menu == "Resumen General":
     st.markdown("<h1>🐔 Panel General del Equipo</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    
-    st.subheader("📊 Promedios SofaScore")
-    df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
-    
-    # Muestra la tabla ocupando todo el ancho superior
-    st.dataframe(
-        df_promedios,
-        hide_index=True, 
-        use_container_width=True
-    )
-    
-    st.divider()
-    
-    # Goleadores y Asistidores divididos en dos columnas debajo de la tabla principal
-    c_goles, c_asist = st.columns(2)
-    with c_goles:
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.subheader("📊 Promedios SofaScore")
+        df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+        
+        # Mostramos la tabla directamente con los números legibles
+        st.dataframe(
+            df_promedios,
+            hide_index=True, 
+            use_container_width=True
+        )
+        
+    with c2:
         st.subheader("⚽ Goleadores")
         st.dataframe(df_agrupado[df_agrupado['Goles'] > 0][['Jugador', 'Goles']].sort_values('Goles', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
-    with c_asist:
+    with c3:
         st.subheader("👟 Asistidores")
         st.dataframe(df_agrupado[df_agrupado['Asistencias'] > 0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
 
@@ -210,30 +207,34 @@ elif menu == "Análisis Individual":
     jugador_sel = st.selectbox("Jugador:", sorted(df_raw['Jugador'].unique()))
     if jugador_sel:
         df_j = df_raw[df_raw['Jugador'] == jugador_sel]
-        c1, c2 = st.columns([2, 1])
-        with c1:
-            # Gráfico de barras sólido y con números legibles
-            fig_l = px.bar(df_j, x="Partido", y="Nota SofaScore", text="Nota SofaScore")
-            fig_l.update_traces(
-                marker_color="#ed1c24", 
-                textposition="outside", 
-                textfont_size=12,
-                texttemplate='%{text:.1f}'
-            )
-            fig_l.add_hline(y=df_j['Nota SofaScore'].mean(), line_dash="dot", annotation_text="Promedio", line_color="black")
-            fig_l.update_layout(yaxis_range=[0, 11])
-            st.plotly_chart(fig_l, use_container_width=True)
-        with c2:
+        
+        st.subheader(f"📈 Evolución de Notas: {jugador_sel}")
+        # Evolución a todo lo ancho arriba
+        fig_l = px.bar(df_j, x="Partido", y="Nota SofaScore", text="Nota SofaScore")
+        fig_l.update_traces(
+            marker_color="#ed1c24", 
+            textposition="outside", 
+            textfont_size=12,
+            texttemplate='%{text:.1f}'
+        )
+        fig_l.add_hline(y=df_j['Nota SofaScore'].mean(), line_dash="dot", annotation_text="Promedio", line_color="black")
+        fig_l.update_layout(yaxis_range=[0, 11])
+        st.plotly_chart(fig_l, use_container_width=True)
+        
+        st.divider()
+        
+        # Telaraña y métricas divididas abajo
+        c_radar, c_metrics = st.columns([1.5, 1])
+        with c_radar:
             st.markdown("#### 🛡️ Perfil Táctico Relativo al Plantel")
-            st.write("*(El borde exterior representa el máximo alcanzado por un jugador del equipo)*")
+            st.write("*(El borde exterior representa el máximo alcanzado por un jugador del equipo en esa métrica)*")
             
-            # Radar Normalizado de 5 puntas
             metrics_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones']
             labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
             
-            totales_jugador = [df_j[m].sum() for m in metrics_radar]
+            totales_jugador = [df_j[m].sum() if m in df_j.columns else 0 for m in metrics_radar]
             df_squad_totals = df_raw.groupby('Jugador')[metrics_radar].sum()
-            maximos_equipo = [df_squad_totals[m].max() for m in metrics_radar]
+            maximos_equipo = [df_squad_totals[m].max() if m in df_squad_totals.columns else 0 for m in metrics_radar]
             
             valores_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(totales_jugador, maximos_equipo)]
             
@@ -257,6 +258,14 @@ elif menu == "Análisis Individual":
                 margin=dict(l=40, r=40, t=20, b=20)
             )
             st.plotly_chart(fig_radar, use_container_width=True)
+            
+        with c_metrics:
+            st.markdown("#### 📋 Datos de Temporada")
+            st.metric("Promedio SofaScore", round(df_j['Nota SofaScore'].mean(), 2))
+            st.metric("Minutos Jugados", int(df_j['Minutos'].sum()))
+            st.metric("Participaciones en Goles", int(df_j['Goles'].sum() + df_j['Asistencias'].sum()))
+            quites_totales = int(df_j['Quites (Tackles)'].sum() + df_j['Intercepciones'].sum()) if 'Quites (Tackles)' in df_j.columns else 0
+            st.metric("Recuperaciones Totales", quites_totales)
 
 # ── PÁGINAS: POR FECHA ───────────────────────────────────────────────────────
 
