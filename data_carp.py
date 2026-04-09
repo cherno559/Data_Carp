@@ -78,6 +78,23 @@ def cargar_datos_completos(ruta_excel):
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
 
 @st.cache_data
+def cargar_todas_las_temporadas():
+    """Carga y agrega datos de todas las temporadas disponibles"""
+    todos_datos = []
+    for anio, ruta in temporadas_dict.items():
+        df, estado = cargar_datos_completos(ruta)
+        if estado == "OK" and not df.empty:
+            df['Temporada'] = anio
+            todos_datos.append(df)
+    
+    if todos_datos:
+        df_completo = pd.concat(todos_datos, ignore_index=True)
+        if 'Efectividad Pases' in df_completo.columns:
+            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
+        return df_completo
+    return pd.DataFrame()
+
+@st.cache_data
 def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
     try:
         wb = load_workbook(ruta_excel_str, data_only=True)
@@ -208,24 +225,6 @@ df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
 ).reset_index(name='Forma (Últ. 5)')
 
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
-
-# ── FUNCIÓN AUXILIAR PARA CARGAR DATOS DE TODAS LAS TEMPORADAS ──────────────
-@st.cache_data
-def cargar_todas_las_temporadas():
-    """Carga y agrega datos de todas las temporadas disponibles"""
-    todos_datos = []
-    for anio, ruta in temporadas_dict.items():
-        df, estado = cargar_datos_completos(ruta)
-        if estado == "OK" and not df.empty:
-            df['Temporada'] = anio
-            todos_datos.append(df)
-    
-    if todos_datos:
-        df_completo = pd.concat(todos_datos, ignore_index=True)
-        if 'Efectividad Pases' in df_completo.columns:
-            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
-        return df_completo
-    return pd.DataFrame()
 
 # ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
 
@@ -537,41 +536,57 @@ elif menu == "Cara a Cara":
         st.markdown("---")
         
         # Métricas generales comparativas
-       st.subheader("📊 Comparación de Estadísticas Generales")
+        st.subheader("📊 Comparación de Estadísticas Generales")
         col_m1, col_m2, col_m3, col_m4 = st.columns(4)
         
         with col_m1:
-            st.metric(label="Promedio SofaScore",
-                     value=f"{datos_j1['Promedio']:.2f}",
-                     delta=None,
-                     help=f"{jugador1} ({temp1})")
-            st.metric(label=f"{jugador2} ({temp2})",
-                     value=f"{datos_j2['Promedio']:.2f}",
-                     delta=f"{datos_j2['Promedio'] - datos_j1['Promedio']:.2f}")
+            st.markdown(f"**Promedio SofaScore**")
+            st.metric(
+                label=f"{jugador1} ({temp1})",
+                value=f"{datos_j1['Promedio']:.2f}"
+            )
+            st.metric(
+                label=f"{jugador2} ({temp2})",
+                value=f"{datos_j2['Promedio']:.2f}",
+                delta=f"{datos_j2['Promedio'] - datos_j1['Promedio']:.2f}"
+            )
         
         with col_m2:
-            st.metric(label="Partidos",
-                     value=int(datos_j1['Partidos']),
-                     help=f"{jugador1} ({temp1})")
-            st.metric(label=f"{jugador2} ({temp2})",
-                     value=int(datos_j2['Partidos']),
-                     delta=int(datos_j2['Partidos'] - datos_j1['Partidos']))
+            st.markdown(f"**Partidos**")
+            st.metric(
+                label=f"{jugador1}",
+                value=int(datos_j1['Partidos'])
+            )
+            st.metric(
+                label=f"{jugador2}",
+                value=int(datos_j2['Partidos']),
+                delta=int(datos_j2['Partidos'] - datos_j1['Partidos'])
+            )
         
         with col_m3:
-            st.metric(label="Goles",
-                     value=int(datos_j1['Goles']),
-                     help=f"{jugador1} ({temp1})")
-            st.metric(label=f"{jugador2} ({temp2})",
-                     value=int(datos_j2['Goles']),
-                     delta=int(datos_j2['Goles'] - datos_j1['Goles']))
+            st.markdown(f"**Goles**")
+            st.metric(
+                label=f"{jugador1}",
+                value=int(datos_j1['Goles'])
+            )
+            st.metric(
+                label=f"{jugador2}",
+                value=int(datos_j2['Goles']),
+                delta=int(datos_j2['Goles'] - datos_j1['Goles'])
+            )
         
         with col_m4:
-            st.metric(label="Asistencias",
-                     value=int(datos_j1['Asistencias']),
-                     help=f"{jugador1} ({temp1})")
-            st.metric(label=f"{jugador2} ({temp2})",
-                     value=int(datos_j2['Asistencias']),
-                     delta=int(datos_j2['Asistencias'] - datos_j1['Asistencias']))
+            st.markdown(f"**Asistencias**")
+            st.metric(
+                label=f"{jugador1}",
+                value=int(datos_j1['Asistencias'])
+            )
+            st.metric(
+                label=f"{jugador2}",
+                value=int(datos_j2['Asistencias']),
+                delta=int(datos_j2['Asistencias'] - datos_j1['Asistencias'])
+            )
+        
         st.markdown("---")
         
         # Gráficos de radar comparativos
@@ -581,11 +596,11 @@ elif menu == "Cara a Cara":
         labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
         
         # Valores de cada jugador
-        valores_j1 = [datos_j1[m] for m in metrics_radar]
-        valores_j2 = [datos_j2[m] for m in metrics_radar]
+        valores_j1 = [float(datos_j1[m]) for m in metrics_radar]
+        valores_j2 = [float(datos_j2[m]) for m in metrics_radar]
         
         # Máximos globales para normalización
-        maximos_globales = [df_comparacion[m].max() for m in metrics_radar]
+        maximos_globales = [float(df_comparacion[m].max()) for m in metrics_radar]
         
         # Normalizar a escala 0-100
         valores_j1_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(valores_j1, maximos_globales)]
@@ -604,8 +619,8 @@ elif menu == "Cara a Cara":
             marker=dict(color='#ed1c24', size=8),
             name=f"{jugador1} ({temp1})",
             hoverinfo='text',
-            text=[f"{labels_radar[i]}: {valores_j1[i]}" for i in range(len(labels_radar))] + 
-                 [f"{labels_radar[0]}: {valores_j1[0]}"]
+            text=[f"{labels_radar[i]}: {int(valores_j1[i])}" for i in range(len(labels_radar))] + 
+                 [f"{labels_radar[0]}: {int(valores_j1[0])}"]
         ))
         
         # Jugador 2 (blanco/gris)
@@ -618,8 +633,8 @@ elif menu == "Cara a Cara":
             marker=dict(color='#808080', size=8),
             name=f"{jugador2} ({temp2})",
             hoverinfo='text',
-            text=[f"{labels_radar[i]}: {valores_j2[i]}" for i in range(len(labels_radar))] + 
-                 [f"{labels_radar[0]}: {valores_j2[0]}"]
+            text=[f"{labels_radar[i]}: {int(valores_j2[i])}" for i in range(len(labels_radar))] + 
+                 [f"{labels_radar[0]}: {int(valores_j2[0])}"]
         ))
         
         fig_radar_comparativo.update_layout(
