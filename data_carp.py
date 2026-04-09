@@ -1,5 +1,5 @@
 import streamlit as st
-import pd as pd
+import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -9,7 +9,7 @@ import io
 import re
 
 # =========================================================
-# 1. CONFIGURACIÓN DE LA PÁGINA
+# 1. CONFIGURACIÓN DE LA PÁGINA (BLINDADO)
 # =========================================================
 st.set_page_config(page_title="Data CARP", page_icon="🐔", layout="wide")
 
@@ -26,7 +26,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =========================================================
-# 2. RUTAS Y LOGOS
+# 2. RUTAS Y LOGOS (BLINDADO)
 # =========================================================
 CARPETA = Path(__file__).parent
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
@@ -36,7 +36,7 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
 # =========================================================
-# 3. DETECCIÓN DE TEMPORADAS
+# 3. DETECCIÓN DE TEMPORADAS (NUEVO - DINÁMICO)
 # =========================================================
 archivos_disponibles = list(CARPETA.glob("Base_Datos_River_*.xlsx"))
 temporadas_dict = {}
@@ -49,7 +49,7 @@ for archivo in archivos_disponibles:
 anios_disponibles = sorted(list(temporadas_dict.keys()), reverse=True)
 
 # =========================================================
-# 4. FUNCIONES DE CARGA Y EXTRACCIÓN
+# 4. FUNCIONES DE CARGA Y EXTRACCIÓN (BLINDADO)
 # =========================================================
 @st.cache_data
 def cargar_datos_completos(ruta_excel):
@@ -152,13 +152,13 @@ with col_nav2:
 st.sidebar.markdown("---")
 
 if not anios_disponibles:
-    st.sidebar.error("❌ No se encontraron archivos Excel.")
-    st.stop()
+    st.sidebar.error("❌ No se encontraron archivos Excel."); st.stop()
 
 temporada_sel = st.sidebar.selectbox("🗓️ Seleccioná la Temporada:", anios_disponibles)
 EXCEL_ACTUAL = temporadas_dict[temporada_sel]
 
 st.sidebar.markdown("---")
+# AGREGAMOS HERRAMIENTAS AL MENÚ
 categoria = st.sidebar.radio("Categoría:", ["🏆 Por Temporada", "🗓️ Por Fecha", "🛠️ Herramientas"])
 st.sidebar.markdown("---")
 
@@ -177,7 +177,7 @@ with col_bot2:
     if RUTA_LOGO_CARP.exists(): st.image(str(RUTA_LOGO_CARP), width=80)
 
 # =========================================================
-# 6. PROCESAMIENTO DE DATOS
+# 6. PROCESAMIENTO DE DATOS (BLINDADO)
 # =========================================================
 df_raw, _ = cargar_datos_completos(EXCEL_ACTUAL)
 
@@ -204,7 +204,7 @@ df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 
 # =========================================================
-# 7. SECCIONES: POR TEMPORADA
+# 7. SECCIONES: POR TEMPORADA (BLINDADO)
 # =========================================================
 if menu == "Resumen General":
     st.markdown(f"<h1>🐔 Panel General - {temporada_sel}</h1>", unsafe_allow_html=True)
@@ -238,29 +238,19 @@ elif menu == "Análisis Individual":
     jugador_sel = st.selectbox("Jugador:", sorted(df_raw['Jugador'].unique()))
     if jugador_sel:
         df_j = df_raw[df_raw['Jugador'] == jugador_sel]
-        
         st.subheader(f"📈 Evolución de Notas: {jugador_sel}")
         fig = px.bar(df_j, x="Partido", y="Nota SofaScore", text="Nota SofaScore")
         fig.update_traces(marker_color="#ed1c24", textposition="outside", texttemplate='%{text:.1f}')
         fig.update_layout(yaxis_range=[0, 11])
         st.plotly_chart(fig, use_container_width=True)
-        
         st.divider()
-        
         c_radar, c_metrics = st.columns([1.5, 1])
         with c_radar:
             metrics_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones']
             totales = [df_j[m].sum() for m in metrics_radar]
             maximos = [df_raw.groupby('Jugador')[m].sum().max() for m in metrics_radar]
             valores_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(totales, maximos)]
-            
-            fig_r = go.Figure(data=go.Scatterpolar(
-                r=valores_norm + [valores_norm[0]], 
-                theta=metrics_radar + [metrics_radar[0]], 
-                fill='toself', 
-                fillcolor='rgba(237,28,36,0.3)', 
-                line=dict(color='#ed1c24')
-            ))
+            fig_r = go.Figure(data=go.Scatterpolar(r=valores_norm + [valores_norm[0]], theta=metrics_radar + [metrics_radar[0]], fill='toself', fillcolor='rgba(237,28,36,0.3)', line=dict(color='#ed1c24')))
             fig_r.update_layout(polar=dict(radialaxis=dict(visible=False, range=[0, 100])), showlegend=False)
             st.plotly_chart(fig_r, use_container_width=True)
         with c_metrics:
@@ -268,14 +258,13 @@ elif menu == "Análisis Individual":
             st.metric("Minutos Totales", int(df_j['Minutos'].sum()))
 
 # =========================================================
-# 8. SECCIONES: POR FECHA
+# 8. SECCIONES: POR FECHA (BLINDADO)
 # =========================================================
 elif menu == "Estadísticas de Equipo":
     partido = st.selectbox("Fecha:", df_raw['Partido'].unique())
     mostrar_marcador(EXCEL_ACTUAL, partido)
     df_e = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), partido)
-    if not df_e.empty: 
-        st.table(df_e)
+    if not df_e.empty: st.table(df_e)
 
 elif menu == "Estadísticas Individuales":
     partido = st.selectbox("Fecha:", df_raw['Partido'].unique())
@@ -288,69 +277,50 @@ elif menu == "Parado Táctico":
     partido = st.selectbox("Fecha:", df_raw['Partido'].unique())
     mostrar_marcador(EXCEL_ACTUAL, partido)
     img = extraer_imagen_incrustada(str(EXCEL_ACTUAL), partido, 0)
-    if img: 
-        st.image(img, use_container_width=True)
+    if img: st.image(img, use_container_width=True)
 
 elif menu == "Mapa de Tiros":
     partido = st.selectbox("Fecha:", df_raw['Partido'].unique())
     mostrar_marcador(EXCEL_ACTUAL, partido)
-    
     img_r = extraer_imagen_incrustada(str(EXCEL_ACTUAL), partido, 1)
     if img_r: st.image(img_r, caption="River Plate", use_container_width=True)
-    
     st.divider()
-    
     img_v = extraer_imagen_incrustada(str(EXCEL_ACTUAL), partido, 2)
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =========================================================
-# 9. HERRAMIENTAS: CARA A CARA
+# 9. HERRAMIENTAS: CARA A CARA (NUEVO)
 # =========================================================
 elif menu == "Cara a Cara":
     st.markdown("<h1>⚔️ Cara a Cara (P90)</h1>", unsafe_allow_html=True)
-    
-    col_a, col_b = st.columns(2)
-    with col_a:
+    c1a, c2a = st.columns(2)
+    with c1a:
         t_a = st.selectbox("Temporada A:", anios_disponibles, key="ta")
         df_a_raw, _ = cargar_datos_completos(temporadas_dict[t_a])
-        jug_a = st.selectbox("Jugador A:", sorted(df_a_raw['Jugador'].unique()), key="ja")
-    with col_b:
+        j_a = st.selectbox("Jugador A:", sorted(df_a_raw['Jugador'].unique()), key="ja")
+    with c2a:
         t_b = st.selectbox("Temporada B:", anios_disponibles, key="tb")
         df_b_raw, _ = cargar_datos_completos(temporadas_dict[t_b])
-        jug_b = st.selectbox("Jugador B:", sorted(df_b_raw['Jugador'].unique()), key="jb")
+        j_b = st.selectbox("Jugador B:", sorted(df_b_raw['Jugador'].unique()), key="jb")
 
-    if jug_a and jug_b:
+    if j_a and j_b:
         def get_p90(df, name):
             d = df[df['Jugador'] == name]
             m = d['Minutos'].sum()
             if m == 0: return None
-            return {
-                'Minutos': m, 
-                'Nota': d['Nota SofaScore'].mean(), 
-                'Goles': (d['Goles'].sum()/m)*90, 
-                'Asist': (d['Asistencias'].sum()/m)*90, 
-                'KeyP': (d['Pases Clave'].sum()/m)*90, 
-                'Quites': (d['Quites (Tackles)'].sum()/m)*90, 
-                'Inter': (d['Intercepciones'].sum()/m)*90
-            }
-
-        s_a, s_b = get_p90(df_a_raw, jug_a), get_p90(df_b_raw, jug_b)
+            return {'Minutos': m, 'Nota': d['Nota SofaScore'].mean(), 'Goles': (d['Goles'].sum()/m)*90, 'Asist': (d['Asistencias'].sum()/m)*90, 'KeyP': (d['Pases Clave'].sum()/m)*90, 'Quites': (d['Quites (Tackles)'].sum()/m)*90, 'Inter': (d['Intercepciones'].sum()/m)*90}
+        
+        s_a, s_b = get_p90(df_a_raw, j_a), get_p90(df_b_raw, j_b)
         if s_a and s_b:
-            c1, c2 = st.columns(2)
+            col_rad1, col_rad2 = st.columns(2)
             mets = ['Goles', 'Asist', 'KeyP', 'Quites', 'Inter']
-            
-            for i, (col, jug, stat, color) in enumerate(zip([c1, c2], [jug_a, jug_b], [s_a, s_b], ['#ed1c24', '#333333'])):
+            for col, jug, stat, color in zip([col_rad1, col_rad2], [j_a, j_b], [s_a, s_b], ['#ed1c24', '#333333']):
                 with col:
                     st.subheader(jug)
                     r_v = [stat[m] for m in mets]
                     fig = go.Figure(data=go.Scatterpolar(r=r_v + [r_v[0]], theta=mets + [mets[0]], fill='toself', fillcolor=color, opacity=0.3, line_color=color))
-                    fig.update_layout(polar=dict(radialaxis=dict(visible=True)), showlegend=False, height=350)
-                    st.plotly_chart(fig, use_container_width=True)
+                    fig.update_layout(polar=dict(radialaxis=dict(visible=True)), height=350); st.plotly_chart(fig, use_container_width=True)
             
             st.markdown("### 📊 Duelo Estadístico")
-            df_comp = pd.DataFrame({
-                "Métrica": ["Minutos", "Nota", "Goles P90", "Asist P90", "Pases Clave P90", "Quites P90", "Intercep P90"],
-                jug_a: [int(s_a['Minutos']), round(s_a['Nota'], 2), round(s_a['Goles'], 2), round(s_a['Asist'], 2), round(s_a['KeyP'], 2), round(s_a['Quites'], 2), round(s_a['Inter'], 2)],
-                jug_b: [int(s_b['Minutos']), round(s_b['Nota'], 2), round(s_b['Goles'], 2), round(s_b['Asist'], 2), round(s_b['KeyP'], 2), round(s_b['Quites'], 2), round(s_b['Inter'], 2)]
-            })
+            df_comp = pd.DataFrame({"Métrica": ["Minutos", "Nota", "Goles P90", "Asist P90", "Pases Clave P90", "Quites P90", "Intercep P90"], j_a: [int(s_a['Minutos']), round(s_a['Nota'], 2), round(s_a['Goles'], 2), round(s_a['Asist'], 2), round(s_a['KeyP'], 2), round(s_a['Quites'], 2), round(s_a['Inter'], 2)], j_b: [int(s_b['Minutos']), round(s_b['Nota'], 2), round(s_b['Goles'], 2), round(s_b['Asist'], 2), round(s_b['KeyP'], 2), round(s_b['Quites'], 2), round(s_b['Inter'], 2)]})
             st.table(df_comp)
