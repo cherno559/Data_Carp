@@ -10,7 +10,7 @@ import io
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
 st.set_page_config(page_title="Data CARP", page_icon="🐔", layout="wide")
 
-# ── ESTILOS CSS (TEMA RIVER PLATE) ───────────────────────────────────────────
+# ── ESTILOS CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
     <style>
     h1, h2, h3, h4 { color: #ed1c24 !important; font-family: 'Arial Black', sans-serif; }
@@ -20,14 +20,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── RUTAS DINÁMICAS ──────────────────────────────────────────────────────────
+# ── RUTAS Y LOGOS ────────────────────────────────────────────────────────────
 CARPETA = Path(__file__).parent
-
 archivos_excel = list(CARPETA.glob("*.xlsx"))
-if archivos_excel:
-    EXCEL = archivos_excel[0]
-else:
-    EXCEL = CARPETA / "Base_Datos_River_2026.xlsx"
+EXCEL = archivos_excel[0] if archivos_excel else CARPETA / "Base_Datos_River_2026.xlsx"
 
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
 RUTA_LOGO_RETRO  = CARPETA / "logo_river_retro.png"
@@ -35,58 +31,72 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
-# ── CARGA DE DATOS ───────────────────────────────────────────────────────────
+# ── FUNCIONES DE CARGA ───────────────────────────────────────────────────────
+
+def extraer_exitosos(valor):
+    try:
+        if isinstance(valor, str):
+            return int(valor.replace("'", "").split('/')[0])
+        return int(valor)
+    except: return 0
+
 @st.cache_data
 def cargar_datos_completos():
-    if not EXCEL.exists():
-        return pd.DataFrame(), f"❌ No se encontró el archivo Excel en: {EXCEL.name}"
+    if not EXCEL.exists(): return pd.DataFrame(), "❌ Archivo no encontrado"
     try:
         xl = pd.ExcelFile(EXCEL)
         partes = []
-        # Agregamos "Hoja" por si hay solapas vacías por defecto
         hojas_omitir = ["Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas", "Hoja"]
-        
         for hoja in xl.sheet_names:
-            # Ignoramos las hojas de resumen
-            if any(omitir in hoja for omitir in hojas_omitir): 
-                continue
-                
+            if any(omitir in hoja for omitir in hojas_omitir): continue
             df = pd.read_excel(EXCEL, sheet_name=hoja)
             df.columns = df.columns.str.strip()
-            
-            # Verificamos que sea una hoja de partido (que tenga la columna Jugador)
-            # Si cambiaste el nombre "Jugador" en el excel, cambialo acá abajo también
             if 'Jugador' in df.columns:
                 df['Jugador'] = df['Jugador'].astype(str).str.strip()
-                
-                # Intentamos convertir la nota a número
                 if 'Nota SofaScore' in df.columns:
                     df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
-                
-                # EL ARREGLO PARA EL NOMBRE DEL PARTIDO:
-                # Ahora toma el nombre de la solapa tal cual está, sin intentar borrar prefijos raros
                 df['Partido'] = hoja 
                 df['Hoja_Original'] = hoja
-                
-                # Limpieza básica de filas vacías
                 df = df.dropna(subset=['Jugador'])
                 df = df[df['Jugador'] != "nan"]
-                
-                # Convertimos el resto de columnas numéricas
-                cols_num = ['Minutos', 'Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones', 'Tiros Totales', 'Efectividad Pases']
+                cols_num = ['Minutos', 'Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones', 'Tiros Totales', 'Efectividad Pases', 'Tiros al Arco']
                 for col in cols_num:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-                
                 partes.append(df)
-        
-        if not partes:
-            return pd.DataFrame(), "⚠️ No se encontraron hojas válidas. Revisá que las columnas se llamen 'Jugador' y 'Nota SofaScore'."
-            
         return pd.concat(partes, ignore_index=True), "OK"
-    except Exception as e:
-        return pd.DataFrame(), f"Error crítico: {str(e)}"
-# ── BARRA LATERAL (DOBLE PESTAÑA) ────────────────────────────────────────────
+    except Exception as e: return pd.DataFrame(), str(e)
+
+@st.cache_data
+def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
+    try:
+        wb = load_workbook(ruta_excel_str, data_only=True)
+        ws = wb[nombre_hoja]
+        if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
+            img = ws._images[indice_imagen]
+            return img._data() if callable(img._data) else img._data
+        return None
+    except: return None
+
+@st.cache_data
+def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
+    try:
+        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
+        row_idx, col_idx = None, None
+        for r in range(min(120, len(df))):
+            for c in range(min(15, len(df.columns))):
+                val = str(df.iloc[r, c]).strip().lower()
+                if val == 'métrica' or val == 'metrica':
+                    row_idx, col_idx = r, c; break
+            if row_idx is not None: break
+        if row_idx is not None:
+            df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
+            df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
+            return df_team.dropna(subset=[df_team.columns[0]])
+        return pd.DataFrame()
+    except: return pd.DataFrame()
+
+# ── BARRA LATERAL ────────────────────────────────────────────────────────────
 col_nav1, col_nav2 = st.sidebar.columns([1, 2])
 with col_nav1:
     if RUTA_LOGO_ACTUAL.exists(): st.image(str(RUTA_LOGO_ACTUAL), width=70)
@@ -94,7 +104,6 @@ with col_nav2:
     st.markdown('<p class="sidebar-title">Data<br>CARP</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-
 categoria = st.sidebar.radio("Categoría de Análisis:", ["🏆 Por Temporada", "🗓️ Por Fecha"])
 st.sidebar.markdown("---")
 
@@ -110,65 +119,46 @@ with col_bot1:
 with col_bot2:
     if RUTA_LOGO_CARP.exists(): st.image(str(RUTA_LOGO_CARP), width=80)
 
-# ── PROCESAMIENTO DE DATOS ───────────────────────────────────────────────────
+# ── PROCESAMIENTO ────────────────────────────────────────────────────────────
 df_raw, estado = cargar_datos_completos()
-if estado != "OK":
-    st.error(estado); st.stop()
+if estado != "OK": st.error(estado); st.stop()
 
-if 'Efectividad Pases' in df_raw.columns:
-    df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
-
-# Agrupación general
-df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
-    Partidos=('Nota SofaScore', 'count'), Promedio=('Nota SofaScore', 'mean'),
-    Minutos=('Minutos', 'sum'), Goles=('Goles', 'sum'), Asistencias=('Asistencias', 'sum'),
-    Pases_Clave=('Pases Clave', 'sum'), Quites=('Quites (Tackles)', 'sum'),
-    Intercepciones=('Intercepciones', 'sum'), Tiros_Totales=('Tiros Totales', 'sum'),
-    Efectividad_Pases=('Efectividad Pases', 'mean')
-)
-df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
-df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
-
-# ESTADO DE FORMA: Calculamos la lista de las últimas 5 notas por jugador
-df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(lambda x: list(x)[-5:]).reset_index(name='Estado de Forma')
-# Unimos la tendencia al DataFrame agrupado
-df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
-
-# ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
+# ── PÁGINAS ──────────────────────────────────────────────────────────────────
 
 if menu == "Resumen General":
     st.markdown("<h1>🐔 Panel General del Equipo</h1>", unsafe_allow_html=True)
-    st.markdown("---")
-    c1, c2, c3 = st.columns(3)
+    df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
+        Partidos=('Nota SofaScore', 'count'), Promedio=('Nota SofaScore', 'mean'),
+        Goles=('Goles', 'sum'), Asistencias=('Asistencias', 'sum')
+    )
+    df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
+    df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(lambda x: list(x)[-5:]).reset_index(name='Estado de Forma')
+    df_agrupado = df_agrupado.merge(df_forma, on='Jugador')
+
+    st.subheader("📊 Promedios y Estado de Forma")
+    st.dataframe(
+        df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Estado de Forma']].sort_values('Promedio', ascending=False),
+        column_config={"Estado de Forma": st.column_config.LineChartColumn("Tendencia (Últ. 5)", y_min=5, y_max=10)},
+        hide_index=True, use_container_width=True
+    )
+    st.divider()
+    c1, c2 = st.columns(2)
     with c1:
-        st.subheader("📊 Promedios SofaScore")
-        df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Estado de Forma']].sort_values('Promedio', ascending=False).reset_index(drop=True)
-        
-        # Muestra la tabla configurando la columna de Forma como un LineChart
-        st.dataframe(
-            df_promedios,
-            column_config={
-                "Estado de Forma": st.column_config.LineChartColumn(
-                    "Forma (Últimos 5)",
-                    y_min=5.0, # Límite inferior para que las caídas se noten
-                    y_max=10.0 # Nota máxima SofaScore
-                )
-            },
-            hide_index=True, 
-            use_container_width=True
-        )
-        
-    with c2:
         st.subheader("⚽ Goleadores")
-        st.dataframe(df_agrupado[df_agrupado['Goles'] > 0][['Jugador', 'Goles']].sort_values('Goles', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
-    with c3:
+        st.dataframe(df_agrupado[df_agrupado['Goles']>0][['Jugador', 'Goles']].sort_values('Goles', ascending=False), hide_index=True, use_container_width=True)
+    with c2:
         st.subheader("👟 Asistidores")
-        st.dataframe(df_agrupado[df_agrupado['Asistencias'] > 0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
+        st.dataframe(df_agrupado[df_agrupado['Asistencias']>0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False), hide_index=True, use_container_width=True)
 
 elif menu == "Mapas de Rendimiento":
     st.markdown("<h1>🗺️ Mapas de Rendimiento</h1>", unsafe_allow_html=True)
-    min_min = st.sidebar.slider("Minutos Mínimos", 0, int(df_agrupado['Minutos'].max()), 180)
-    df_p90 = df_agrupado[df_agrupado['Minutos'] >= min_min].copy()
+    df_map = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
+        Minutos=('Minutos', 'sum'), Pases_Clave=('Pases Clave', 'sum'), Asistencias=('Asistencias', 'sum'),
+        Quites=('Quites (Tackles)', 'sum'), Intercepciones=('Intercepciones', 'sum'), 
+        Tiros_Totales=('Tiros Totales', 'sum'), Goles=('Goles', 'sum'), Efectividad_Pases=('Efectividad Pases', 'mean')
+    )
+    min_min = st.sidebar.slider("Minutos Mínimos", 0, int(df_map['Minutos'].max()), 180)
+    df_p90 = df_map[df_map['Minutos'] >= min_min].copy()
     df_p90['PasesClave_P90'] = (df_p90['Pases_Clave'] / df_p90['Minutos']) * 90
     df_p90['Asistencias_P90'] = (df_p90['Asistencias'] / df_p90['Minutos']) * 90
     df_p90['Quites_P90'] = (df_p90['Quites'] / df_p90['Minutos']) * 90
@@ -176,19 +166,16 @@ elif menu == "Mapas de Rendimiento":
 
     st.markdown("### 🛡️ Defensa")
     st.plotly_chart(px.scatter(df_p90, x="Quites_P90", y="Inter_P90", color="Posición", hover_name="Jugador", color_discrete_map=DICCIONARIO_COLORES).update_traces(marker=dict(size=15)), use_container_width=True)
-    
-    st.markdown("---")
+    st.divider()
     st.markdown("### 🧠 Creación")
     c1, c2 = st.columns(2)
     with c1: st.plotly_chart(px.scatter(df_p90, x="PasesClave_P90", y="Asistencias_P90", color="Posición", hover_name="Jugador", color_discrete_map=DICCIONARIO_COLORES).update_traces(marker=dict(size=13)), use_container_width=True)
     with c2: st.plotly_chart(px.scatter(df_p90, x="PasesClave_P90", y="Efectividad_Pases", color="Posición", hover_name="Jugador", color_discrete_map=DICCIONARIO_COLORES).update_traces(marker=dict(size=13)), use_container_width=True)
-    
-    st.markdown("---")
+    st.divider()
     st.markdown("### 🎯 Ataque")
-    df_t = df_agrupado[df_agrupado['Tiros_Totales'] > 0]
+    df_t = df_map[df_map['Tiros_Totales'] > 0]
     if not df_t.empty:
         fig_of = px.scatter(df_t, x="Tiros_Totales", y="Goles", color="Posición", hover_name="Jugador", color_discrete_map=DICCIONARIO_COLORES).update_traces(marker=dict(size=15))
-        fig_of.add_shape(type="line", x0=0, y0=0, x1=df_t['Tiros_Totales'].max()+2, y1=(df_t['Tiros_Totales'].max()+2)*0.20, line=dict(color="Gray", dash="dot"))
         st.plotly_chart(fig_of, use_container_width=True)
 
 elif menu == "Análisis Individual":
@@ -199,7 +186,6 @@ elif menu == "Análisis Individual":
         c1, c2 = st.columns([2, 1])
         with c1:
             fig_l = px.line(df_j, x="Partido", y="Nota SofaScore", markers=True).update_traces(line_color="#ed1c24", marker=dict(size=10))
-            fig_l.add_hline(y=df_j['Nota SofaScore'].mean(), line_dash="dot", annotation_text="Promedio")
             st.plotly_chart(fig_l, use_container_width=True)
         with c2:
             stats = ['Pases Clave', 'Tiros Totales', 'Quites (Tackles)', 'Intercepciones']
@@ -207,108 +193,39 @@ elif menu == "Análisis Individual":
             fig_r = go.Figure(data=go.Scatterpolar(r=vals, theta=stats+[stats[0]], fill='toself', fillcolor='rgba(237,28,36,0.4)', line_color='#ed1c24'))
             st.plotly_chart(fig_r, use_container_width=True)
 
-# ── PÁGINAS: POR FECHA ───────────────────────────────────────────────────────
-
 elif menu == "Estadísticas de Equipo":
     st.markdown("<h1>⚖️ Estadísticas de Equipo</h1>", unsafe_allow_html=True)
-    st.markdown("Comparativa general del rendimiento colectivo frente al rival.")
-    
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
-    partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
-    
-    df_equipo = extraer_estadisticas_equipo(str(EXCEL), hojas[partido])
-    
-    st.divider()
-    if not df_equipo.empty:
-        st.dataframe(df_equipo, hide_index=True, use_container_width=True)
-    else:
-        st.warning("⚠️ No se encontraron las estadísticas colectivas al final de esta hoja.")
+    partido = st.selectbox("Fecha:", list(hojas.keys()))
+    df_team = extraer_estadisticas_equipo(str(EXCEL), hojas[partido])
+    if not df_team.empty: st.dataframe(df_team, hide_index=True, use_container_width=True)
+    else: st.warning("No se encontró la tabla en esta hoja.")
 
 elif menu == "Estadísticas Individuales":
     st.markdown("<h1>👤 Estadísticas Individuales</h1>", unsafe_allow_html=True)
-    st.markdown("Seleccioná un partido para ver el **Top 7** de rendimiento en las métricas clave.")
-    
-    def extraer_exitosos(valor):
-        try:
-            if isinstance(valor, str):
-                return int(valor.replace("'", "").split('/')[0])
-            return int(valor)
-        except:
-            return 0
-
     partidos = df_raw['Partido'].unique()
-    partido_seleccionado = st.selectbox("Seleccioná la fecha:", partidos)
-    
-    df_p = df_raw[df_raw['Partido'] == partido_seleccionado].copy()
-    
-    if 'Pases (Comp/Tot)' in df_p.columns:
-        df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
-    if 'Duelos (Gan/Tot)' in df_p.columns:
-        df_p['Duelos Ganados'] = df_p['Duelos (Gan/Tot)'].apply(extraer_exitosos)
-    if 'Regates (Exit/Tot)' in df_p.columns:
-        df_p['Regates Exitosos'] = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
-        
-    if 'Quites (Tackles)' in df_p.columns:
-        df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
-        
-    cols_a_num = ['Efectividad Pases', 'Efectividad Duelos', 'Efectividad Regates', 'Tiros al Arco', 'Tiros Totales', 'Pases Clave', 'Intercepciones']
-    for col in cols_a_num:
-        if col in df_p.columns:
-            df_p[col] = pd.to_numeric(df_p[col], errors='coerce').fillna(0)
+    partido_sel = st.selectbox("Fecha:", partidos)
+    df_p = df_raw[df_raw['Partido'] == partido_sel].copy()
+    if 'Pases (Comp/Tot)' in df_p.columns: df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
+    if 'Regates (Exit/Tot)' in df_p.columns: df_p['Regates Exitosos'] = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
+    if 'Quites (Tackles)' in df_p.columns: df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
 
     st.divider()
-    st.subheader(f"🏆 Top 7 - {partido_seleccionado}")
     top_n = 7
-
-    # 1. VALORACIÓN GENERAL
     st.markdown("### ⭐ Nota SofaScore")
-    if 'Nota SofaScore' in df_p.columns:
-        top_nota = df_p.nlargest(top_n, 'Nota SofaScore')[['Jugador', 'Nota SofaScore']]
-        st.dataframe(top_nota, hide_index=True, use_container_width=True)
-
-    # 2. ASPECTO DEFENSIVO
+    st.dataframe(df_p.nlargest(top_n, 'Nota SofaScore')[['Jugador', 'Nota SofaScore']], hide_index=True, use_container_width=True)
     st.markdown("### 🛡️ Quites")
-    if 'Quites' in df_p.columns:
-        top_quites = df_p.nlargest(top_n, 'Quites')[['Jugador', 'Quites']]
-        st.dataframe(top_quites, hide_index=True, use_container_width=True)
-
+    st.dataframe(df_p.nlargest(top_n, 'Quites')[['Jugador', 'Quites']], hide_index=True, use_container_width=True)
     st.markdown("### 🛑 Intercepciones")
-    if 'Intercepciones' in df_p.columns:
-        top_intercepciones = df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']]
-        st.dataframe(top_intercepciones, hide_index=True, use_container_width=True)
-
-    st.markdown("### ⚔️ Duelos Ganados")
-    if 'Duelos Ganados' in df_p.columns and 'Efectividad Duelos' in df_p.columns:
-        top_duelos = df_p.sort_values(by=['Duelos Ganados', 'Efectividad Duelos'], ascending=[False, False]).head(top_n)[['Jugador', 'Duelos Ganados', 'Efectividad Duelos']]
-        st.dataframe(top_duelos, hide_index=True, use_container_width=True)
-
-    # 3. CREACIÓN Y POSESIÓN
+    st.dataframe(df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']], hide_index=True, use_container_width=True)
     st.markdown("### 🎯 Pases Completados")
-    if 'Pases Completados' in df_p.columns and 'Efectividad Pases' in df_p.columns:
-        top_pases = df_p.sort_values(by=['Pases Completados', 'Efectividad Pases'], ascending=[False, False]).head(top_n)[['Jugador', 'Pases Completados', 'Efectividad Pases']]
-        st.dataframe(top_pases, hide_index=True, use_container_width=True)
-
+    st.dataframe(df_p.nlargest(top_n, 'Pases Completados')[['Jugador', 'Pases Completados']], hide_index=True, use_container_width=True)
     st.markdown("### 🔑 Pases Clave")
-    if 'Pases Clave' in df_p.columns:
-        top_pases_clave = df_p[df_p['Pases Clave'] > 0].nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']]
-        if not top_pases_clave.empty:
-            st.dataframe(top_pases_clave, hide_index=True, use_container_width=True)
-        else:
-            st.info("Ningún jugador registró pases clave en este partido.")
-
-    # 4. ATAQUE Y DEFINICIÓN
+    st.dataframe(df_p[df_p['Pases Clave']>0].nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']], hide_index=True, use_container_width=True)
     st.markdown("### ⚡ Regates Exitosos")
-    if 'Regates Exitosos' in df_p.columns and 'Efectividad Regates' in df_p.columns:
-        top_regates = df_p[df_p['Regates Exitosos'] > 0].sort_values(by=['Regates Exitosos', 'Efectividad Regates'], ascending=[False, False]).head(top_n)[['Jugador', 'Regates Exitosos', 'Efectividad Regates']]
-        if not top_regates.empty:
-            st.dataframe(top_regates, hide_index=True, use_container_width=True)
-        else:
-            st.info("Ningún jugador registró regates exitosos en este partido.")
-
+    st.dataframe(df_p[df_p['Regates Exitosos']>0].nlargest(top_n, 'Regates Exitosos')[['Jugador', 'Regates Exitosos']], hide_index=True, use_container_width=True)
     st.markdown("### 👟 Tiros al Arco")
-    if 'Tiros al Arco' in df_p.columns and 'Tiros Totales' in df_p.columns:
-        top_tiros = df_p.sort_values(by=['Tiros al Arco', 'Tiros Totales'], ascending=[False, False]).head(top_n)[['Jugador', 'Tiros al Arco', 'Tiros Totales']]
-        st.dataframe(top_tiros, hide_index=True, use_container_width=True)
+    st.dataframe(df_p.nlargest(top_n, 'Tiros al Arco')[['Jugador', 'Tiros al Arco']], hide_index=True, use_container_width=True)
 
 elif menu == "Parado Táctico":
     st.markdown("<h1>📋 Parado Táctico</h1>", unsafe_allow_html=True)
@@ -316,7 +233,6 @@ elif menu == "Parado Táctico":
     partido = st.selectbox("Fecha:", list(hojas.keys()))
     img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 0)
     if img: st.image(img, use_container_width=True)
-    else: st.warning("Imagen no encontrada.")
 
 elif menu == "Mapa de Tiros":
     st.markdown("<h1>🎯 Mapa de Tiros</h1>", unsafe_allow_html=True)
@@ -324,4 +240,3 @@ elif menu == "Mapa de Tiros":
     partido = st.selectbox("Fecha:", list(hojas.keys()))
     img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 1)
     if img: st.image(img, use_container_width=True)
-    else: st.warning("Imagen no encontrada.")
