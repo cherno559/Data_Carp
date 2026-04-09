@@ -157,22 +157,23 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 if menu == "Resumen General":
     st.markdown("<h1>🐔 Panel General del Equipo</h1>", unsafe_allow_html=True)
     st.markdown("---")
-    c1, c2, c3 = st.columns(3)
+    
+    st.subheader("📊 Promedios SofaScore")
+    df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+    
+    st.dataframe(
+        df_promedios,
+        hide_index=True, 
+        use_container_width=True
+    )
+    
+    st.divider()
+    
+    c1, c2 = st.columns(2)
     with c1:
-        st.subheader("📊 Promedios SofaScore")
-        df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
-        
-        # Mostramos la tabla directamente con los números legibles
-        st.dataframe(
-            df_promedios,
-            hide_index=True, 
-            use_container_width=True
-        )
-        
-    with c2:
         st.subheader("⚽ Goleadores")
         st.dataframe(df_agrupado[df_agrupado['Goles'] > 0][['Jugador', 'Goles']].sort_values('Goles', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
-    with c3:
+    with c2:
         st.subheader("👟 Asistidores")
         st.dataframe(df_agrupado[df_agrupado['Asistencias'] > 0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
 
@@ -209,7 +210,6 @@ elif menu == "Análisis Individual":
         df_j = df_raw[df_raw['Jugador'] == jugador_sel]
         
         st.subheader(f"📈 Evolución de Notas: {jugador_sel}")
-        # Evolución a todo lo ancho arriba
         fig_l = px.bar(df_j, x="Partido", y="Nota SofaScore", text="Nota SofaScore")
         fig_l.update_traces(
             marker_color="#ed1c24", 
@@ -223,7 +223,6 @@ elif menu == "Análisis Individual":
         
         st.divider()
         
-        # Telaraña y métricas divididas abajo
         c_radar, c_metrics = st.columns([1.5, 1])
         with c_radar:
             st.markdown("#### 🛡️ Perfil Táctico Relativo al Plantel")
