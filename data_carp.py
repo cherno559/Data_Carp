@@ -29,7 +29,7 @@ def extraer_exitosos(valor):
 @st.cache_data
 def cargar_datos():
     # ACÁ ESTÁ CORREGIDO: Una sola línea, con las comillas cerradas
-    ruta_archivo = "Base_Datos_River_2026.csv"
+    ruta_archivo = "Base_Datos_River_2026.xlsx"
     
     if os.path.exists(ruta_archivo):
         df = pd.read_csv(ruta_archivo)
