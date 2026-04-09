@@ -43,64 +43,49 @@ def cargar_datos_completos():
     try:
         xl = pd.ExcelFile(EXCEL)
         partes = []
-        hojas_omitir = ["Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"]
+        # Agregamos "Hoja" por si hay solapas vacías por defecto
+        hojas_omitir = ["Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas", "Hoja"]
+        
         for hoja in xl.sheet_names:
-            if hoja in hojas_omitir: continue
+            # Ignoramos las hojas de resumen
+            if any(omitir in hoja for omitir in hojas_omitir): 
+                continue
+                
             df = pd.read_excel(EXCEL, sheet_name=hoja)
             df.columns = df.columns.str.strip()
-            if 'Jugador' in df.columns and 'Nota SofaScore' in df.columns:
-                df['Jugador'] = df['Jugador'].str.strip()
-                df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
-                df = df.dropna(subset=['Jugador', 'Nota SofaScore'])
-                df = df[(df['Jugador'] != "") & (df['Nota SofaScore'] > 0)]
+            
+            # Verificamos que sea una hoja de partido (que tenga la columna Jugador)
+            # Si cambiaste el nombre "Jugador" en el excel, cambialo acá abajo también
+            if 'Jugador' in df.columns:
+                df['Jugador'] = df['Jugador'].astype(str).str.strip()
+                
+                # Intentamos convertir la nota a número
+                if 'Nota SofaScore' in df.columns:
+                    df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
+                
+                # EL ARREGLO PARA EL NOMBRE DEL PARTIDO:
+                # Ahora toma el nombre de la solapa tal cual está, sin intentar borrar prefijos raros
+                df['Partido'] = hoja 
+                df['Hoja_Original'] = hoja
+                
+                # Limpieza básica de filas vacías
+                df = df.dropna(subset=['Jugador'])
+                df = df[df['Jugador'] != "nan"]
+                
+                # Convertimos el resto de columnas numéricas
                 cols_num = ['Minutos', 'Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones', 'Tiros Totales', 'Efectividad Pases']
                 for col in cols_num:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-                df['Hoja_Original'] = hoja
-                df['Partido'] = hoja.replace("Base_Datos_River_2026.xlsx - ", "").replace(".csv", "")
+                
                 partes.append(df)
-        return pd.concat(partes, ignore_index=True) if partes else pd.DataFrame(), "OK"
+        
+        if not partes:
+            return pd.DataFrame(), "⚠️ No se encontraron hojas válidas. Revisá que las columnas se llamen 'Jugador' y 'Nota SofaScore'."
+            
+        return pd.concat(partes, ignore_index=True), "OK"
     except Exception as e:
-        return pd.DataFrame(), f"Error: {str(e)}"
-
-@st.cache_data
-def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
-    try:
-        wb = load_workbook(ruta_excel_str, data_only=True)
-        if nombre_hoja in wb.sheetnames:
-            ws = wb[nombre_hoja]
-            if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
-                img = ws._images[indice_imagen]
-                return img._data() if callable(img._data) else img._data
-        return None
-    except: return None
-
-@st.cache_data
-def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
-    try:
-        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
-        row_idx, col_idx = None, None
-        
-        for r in range(min(100, len(df))):
-            for c in range(min(10, len(df.columns))):
-                val = str(df.iloc[r, c]).strip().lower()
-                if val == 'métrica' or val == 'metrica':
-                    row_idx, col_idx = r, c
-                    break
-            if row_idx is not None: break
-        
-        if row_idx is not None:
-            df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
-            df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
-            df_team = df_team.dropna(subset=[df_team.columns[0]])
-            df_team = df_team[df_team[df_team.columns[0]].astype(str).str.strip() != '']
-            df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
-            return df_team
-        return pd.DataFrame()
-    except:
-        return pd.DataFrame()
-
+        return pd.DataFrame(), f"Error crítico: {str(e)}"
 # ── BARRA LATERAL (DOBLE PESTAÑA) ────────────────────────────────────────────
 col_nav1, col_nav2 = st.sidebar.columns([1, 2])
 with col_nav1:
