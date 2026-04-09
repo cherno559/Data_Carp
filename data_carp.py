@@ -156,7 +156,6 @@ with col_nav2:
 
 st.sidebar.markdown("---")
 
-# ── NUEVO: SELECTOR DE TEMPORADA ──
 if not anios_disponibles:
     st.sidebar.error("❌ No se encontraron archivos de Base de Datos.")
     st.stop()
@@ -441,6 +440,7 @@ elif menu == "Parado Táctico":
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
 
+# ── SECCIÓN MODIFICADA: MAPA DE TIROS ──
 elif menu == "Mapa de Tiros":
     st.markdown("<h1>🎯 Mapa de Tiros</h1>", unsafe_allow_html=True)
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
@@ -448,6 +448,18 @@ elif menu == "Mapa de Tiros":
     
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    img = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 1)
-    if img: st.image(img, use_container_width=True)
-    else: st.warning("Imagen no encontrada.")
+    # 1. Mapa de Tiros de River (Índice 1 en el Excel)
+    img_river = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 1)
+    if img_river: 
+        st.image(img_river, use_container_width=True)
+    else: 
+        st.warning("Mapa de tiros de River Plate no encontrado.")
+        
+    st.divider() # Línea separadora
+        
+    # 2. Mapa de Tiros del Rival (Índice 2 en el Excel)
+    img_rival = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 2)
+    if img_rival: 
+        st.image(img_rival, use_container_width=True)
+    else: 
+        st.warning("Mapa de tiros del rival no encontrado.")
