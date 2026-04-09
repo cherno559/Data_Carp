@@ -28,11 +28,12 @@ def extraer_exitosos(valor):
 
 @st.cache_data
 def cargar_datos():
-    # ACÁ ESTÁ CORREGIDO: Una sola línea, con las comillas cerradas
+    # El nombre exacto de tu Excel
     ruta_archivo = "Base_Datos_River_2026.xlsx"
     
     if os.path.exists(ruta_archivo):
-        df = pd.read_csv(ruta_archivo)
+        # USAMOS read_excel EN LUGAR DE read_csv
+        df = pd.read_excel(ruta_archivo)
         
         # Limpieza de columnas para poder calcular los MVP
         if 'Pases (Comp/Tot)' in df.columns:
@@ -54,7 +55,7 @@ st.markdown("Plataforma de análisis de rendimiento individual y colectivo.")
 df_stats = cargar_datos()
 
 if df_stats.empty:
-    st.error(f"⚠️ No se encontró la base de datos. Verificá que el archivo se llame exactamente 'Base_Datos_River_2026.csv' en tu repositorio.")
+    st.error("⚠️ No se encontró la base de datos. Verificá que el archivo se llame exactamente 'Base_Datos_River_2026.xlsx' en tu repositorio.")
     st.stop()
 
 # ==========================================
@@ -140,7 +141,7 @@ with tab3:
                 top_remates = df_partido.nlargest(top_n, 'Tiros Totales')[['Jugador', 'Tiros Totales']]
                 st.dataframe(top_remates, hide_index=True, use_container_width=True)
     else:
-        st.warning("⚠️ No se encontró la columna 'Partido'. Asegurate de que exista en tu CSV.")
+        st.warning("⚠️ No se encontró la columna 'Partido'. Asegurate de que exista en tu Excel.")
 
 # ==========================================
 # FOOTER
