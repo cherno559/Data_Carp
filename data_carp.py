@@ -20,17 +20,15 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── RUTAS DINÁMICAS (ESTO ARREGLA EL ERROR DEL EXCEL) ────────────────────────
+# ── RUTAS DINÁMICAS ──────────────────────────────────────────────────────────
 CARPETA = Path(__file__).parent
 
-# Buscamos cualquier archivo .xlsx en la carpeta
 archivos_excel = list(CARPETA.glob("*.xlsx"))
 if archivos_excel:
     EXCEL = archivos_excel[0]
 else:
     EXCEL = CARPETA / "Base_Datos_River_2026.xlsx"
 
-# Logos locales
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
 RUTA_LOGO_RETRO  = CARPETA / "logo_river_retro.png"
 RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
@@ -80,12 +78,10 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
 
 @st.cache_data
 def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
-    """Busca y extrae la tablita de estadísticas de equipo al final de cada hoja"""
     try:
         df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
         row_idx, col_idx = None, None
         
-        # Buscamos la fila donde dice "Métrica"
         for r in range(min(100, len(df))):
             for c in range(min(10, len(df.columns))):
                 val = str(df.iloc[r, c]).strip().lower()
@@ -95,11 +91,8 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
             if row_idx is not None: break
         
         if row_idx is not None:
-            # Extraemos la tabla desde ese punto (Métrica + Equipo 1 + Equipo 2)
             df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
             df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
-            
-            # Limpiamos filas que estén vacías o no sean parte de la tabla
             df_team = df_team.dropna(subset=[df_team.columns[0]])
             df_team = df_team[df_team[df_team.columns[0]].astype(str).str.strip() != '']
             df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
@@ -117,11 +110,9 @@ with col_nav2:
 
 st.sidebar.markdown("---")
 
-# 1. CATEGORÍA PRINCIPAL
 categoria = st.sidebar.radio("Categoría de Análisis:", ["🏆 Por Temporada", "🗓️ Por Fecha"])
 st.sidebar.markdown("---")
 
-# 2. SUB-MENÚ DINÁMICO
 if categoria == "🏆 Por Temporada":
     menu = st.sidebar.radio("Sección:", ["Resumen General", "Mapas de Rendimiento", "Análisis Individual"])
 else:
@@ -142,6 +133,7 @@ if estado != "OK":
 if 'Efectividad Pases' in df_raw.columns:
     df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
+# Agrupación general
 df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
     Partidos=('Nota SofaScore', 'count'), Promedio=('Nota SofaScore', 'mean'),
     Minutos=('Minutos', 'sum'), Goles=('Goles', 'sum'), Asistencias=('Asistencias', 'sum'),
@@ -152,6 +144,11 @@ df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
+# ESTADO DE FORMA: Calculamos la lista de las últimas 5 notas por jugador
+df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(lambda x: list(x)[-5:]).reset_index(name='Estado de Forma')
+# Unimos la tendencia al DataFrame agrupado
+df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
+
 # ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
 
 if menu == "Resumen General":
@@ -160,7 +157,22 @@ if menu == "Resumen General":
     c1, c2, c3 = st.columns(3)
     with c1:
         st.subheader("📊 Promedios SofaScore")
-        st.dataframe(df_agrupado[['Jugador', 'Promedio', 'Partidos']].sort_values('Promedio', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
+        df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Estado de Forma']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+        
+        # Muestra la tabla configurando la columna de Forma como un LineChart
+        st.dataframe(
+            df_promedios,
+            column_config={
+                "Estado de Forma": st.column_config.LineChartColumn(
+                    "Forma (Últimos 5)",
+                    y_min=5.0, # Límite inferior para que las caídas se noten
+                    y_max=10.0 # Nota máxima SofaScore
+                )
+            },
+            hide_index=True, 
+            use_container_width=True
+        )
+        
     with c2:
         st.subheader("⚽ Goleadores")
         st.dataframe(df_agrupado[df_agrupado['Goles'] > 0][['Jugador', 'Goles']].sort_values('Goles', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
