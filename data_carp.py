@@ -28,7 +28,7 @@ def extraer_exitosos(valor):
 
 @st.cache_data
 def cargar_datos():
-    """Carga y limpia la base de datos unificada."""
+   ruta_archivo = "Base_Datos_River_2026.csv
     
     # ⚠️ REEMPLAZÁ ESTO POR EL NOMBRE EXACTO DE TU ARCHIVO EN GITHUB ⚠️
     ruta_archivo = "base_unificada.csv" 
