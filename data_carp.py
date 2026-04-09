@@ -10,7 +10,7 @@ import io
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
 st.set_page_config(page_title="Data CARP", page_icon="🐔", layout="wide")
 
-# ── ESTILOS CSS (TEMA RIVER PLATE) ───────────────────────────────────────────
+# ── ESTILOS CSS ──────────────────────────────────────────────────────────────
 st.markdown("""
     <style>
     h1, h2, h3, h4 { color: #ed1c24 !important; font-family: 'Arial Black', sans-serif; }
@@ -20,7 +20,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── RUTAS DINÁMICAS ──────────────────────────────────────────────────────────
+# ── RUTAS Y LOGOS ────────────────────────────────────────────────────────────
 CARPETA = Path(__file__).parent
 archivos_excel = list(CARPETA.glob("*.xlsx"))
 EXCEL = archivos_excel[0] if archivos_excel else CARPETA / "Base_Datos_River_2026.xlsx"
@@ -31,7 +31,7 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
-# ── FUNCIONES DE PROCESAMIENTO ───────────────────────────────────────────────
+# ── FUNCIONES DE CARGA ───────────────────────────────────────────────────────
 
 def extraer_exitosos(valor):
     try:
@@ -132,23 +132,34 @@ if menu == "Resumen General":
         Goles=('Goles', 'sum'), Asistencias=('Asistencias', 'sum')
     )
     df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
+    
+    # Estado de Forma (Últimas 5 notas)
     df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(lambda x: list(x)[-5:]).reset_index(name='Estado de Forma')
     df_agrupado = df_agrupado.merge(df_forma, on='Jugador')
 
     st.subheader("📊 Promedios y Estado de Forma")
+    # CAMBIO: Usamos BarChartColumn para que cada partido sea una barra visible
     st.dataframe(
         df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Estado de Forma']].sort_values('Promedio', ascending=False),
-        column_config={"Estado de Forma": st.column_config.LineChartColumn("Tendencia (Últ. 5)", y_min=5, y_max=10)},
+        column_config={
+            "Estado de Forma": st.column_config.BarChartColumn(
+                "Forma (Últ. 5 Partidos)",
+                help="Cada barra representa la nota de un partido (de izquierda a derecha: más antiguo a más reciente)",
+                y_min=5, y_max=10,
+                width="large" # Hacemos la columna más ancha para que se aprecie mejor
+            )
+        },
         hide_index=True, use_container_width=True
     )
+    
     st.divider()
-    c1, c2 = st.columns(2)
-    with c1:
-        st.subheader("⚽ Goleadores")
-        st.dataframe(df_agrupado[df_agrupado['Goles']>0][['Jugador', 'Goles']].sort_values('Goles', ascending=False), hide_index=True, use_container_width=True)
-    with c2:
-        st.subheader("👟 Asistidores")
-        st.dataframe(df_agrupado[df_agrupado['Asistencias']>0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False), hide_index=True, use_container_width=True)
+    
+    # Goleadores y Asistidores uno debajo del otro
+    st.subheader("⚽ Goleadores")
+    st.dataframe(df_agrupado[df_agrupado['Goles']>0][['Jugador', 'Goles']].sort_values('Goles', ascending=False), hide_index=True, use_container_width=True)
+    
+    st.subheader("👟 Asistidores")
+    st.dataframe(df_agrupado[df_agrupado['Asistencias']>0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False), hide_index=True, use_container_width=True)
 
 elif menu == "Mapas de Rendimiento":
     st.markdown("<h1>🗺️ Mapas de Rendimiento</h1>", unsafe_allow_html=True)
