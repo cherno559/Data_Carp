@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from pathlib import Path
 from openpyxl import load_workbook
 import io
+import re
 
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
 st.set_page_config(page_title="Data CARP", page_icon="🐔", layout="wide")
@@ -23,14 +24,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── RUTAS DINÁMICAS ──────────────────────────────────────────────────────────
+# ── RUTAS Y LOGOS ────────────────────────────────────────────────────────────
 CARPETA = Path(__file__).parent
-
-archivos_excel = list(CARPETA.glob("*.xlsx"))
-if archivos_excel:
-    EXCEL = archivos_excel[0]
-else:
-    EXCEL = CARPETA / "Base_Datos_River_2026.xlsx"
 
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
 RUTA_LOGO_RETRO  = CARPETA / "logo_river_retro.png"
@@ -38,18 +33,32 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
+# ── DETECCIÓN DE TEMPORADAS DISPONIBLES ──────────────────────────────────────
+# Buscamos todos los archivos que coincidan con el patrón Base_Datos_River_XXXX.xlsx
+archivos_disponibles = list(CARPETA.glob("Base_Datos_River_*.xlsx"))
+
+temporadas_dict = {}
+for archivo in archivos_disponibles:
+    match = re.search(r"Base_Datos_River_(\d{4})\.xlsx", archivo.name)
+    if match:
+        anio = match.group(1)
+        temporadas_dict[anio] = archivo
+
+# Ordenamos los años de mayor a menor (Ej: 2026, 2025...)
+anios_disponibles = sorted(list(temporadas_dict.keys()), reverse=True)
+
 # ── CARGA Y EXTRACCIÓN DE DATOS ──────────────────────────────────────────────
 @st.cache_data
-def cargar_datos_completos():
-    if not EXCEL.exists():
-        return pd.DataFrame(), f"❌ No se encontró el archivo Excel en: {EXCEL.name}"
+def cargar_datos_completos(ruta_excel):
+    if not ruta_excel.exists():
+        return pd.DataFrame(), f"❌ No se encontró el archivo Excel en: {ruta_excel.name}"
     try:
-        xl = pd.ExcelFile(EXCEL)
+        xl = pd.ExcelFile(ruta_excel)
         partes = []
         hojas_omitir = ["Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"]
         for hoja in xl.sheet_names:
             if hoja in hojas_omitir: continue
-            df = pd.read_excel(EXCEL, sheet_name=hoja)
+            df = pd.read_excel(ruta_excel, sheet_name=hoja)
             df.columns = df.columns.str.strip()
             if 'Jugador' in df.columns and 'Nota SofaScore' in df.columns:
                 df['Jugador'] = df['Jugador'].str.strip()
@@ -61,11 +70,12 @@ def cargar_datos_completos():
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
                 df['Hoja_Original'] = hoja
-                df['Partido'] = hoja.replace("Base_Datos_River_2026.xlsx - ", "").replace(".csv", "")
+                # Ya no limpiamos el "Base_Datos_River..." porque las hojas se llaman directo como el partido
+                df['Partido'] = hoja 
                 partes.append(df)
         return pd.concat(partes, ignore_index=True) if partes else pd.DataFrame(), "OK"
     except Exception as e:
-        return pd.DataFrame(), f"Error: {str(e)}"
+        return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
 
 @st.cache_data
 def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
@@ -126,9 +136,9 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
     except:
         return "Local", "Rival", "?", "?"
 
-def mostrar_marcador(hoja_excel):
+def mostrar_marcador(ruta_excel, hoja_excel):
     """Dibuja el cartel del resultado en la app."""
-    local, rival, g_local, g_rival = extraer_info_partido(str(EXCEL), hoja_excel)
+    local, rival, g_local, g_rival = extraer_info_partido(str(ruta_excel), hoja_excel)
     if g_local != "?" and g_rival != "?":
         st.markdown(f"""
             <div class="score-box">
@@ -137,12 +147,22 @@ def mostrar_marcador(hoja_excel):
             </div>
         """, unsafe_allow_html=True)
 
-# ── BARRA LATERAL (DOBLE PESTAÑA) ────────────────────────────────────────────
+# ── BARRA LATERAL ────────────────────────────────────────────────────────────
 col_nav1, col_nav2 = st.sidebar.columns([1, 2])
 with col_nav1:
     if RUTA_LOGO_ACTUAL.exists(): st.image(str(RUTA_LOGO_ACTUAL), width=70)
 with col_nav2:
     st.markdown('<p class="sidebar-title">Data<br>CARP</p>', unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+# ── NUEVO: SELECTOR DE TEMPORADA ──
+if not anios_disponibles:
+    st.sidebar.error("❌ No se encontraron archivos de Base de Datos.")
+    st.stop()
+
+temporada_sel = st.sidebar.selectbox("🗓️ Seleccioná la Temporada:", anios_disponibles)
+EXCEL_ACTUAL = temporadas_dict[temporada_sel]
 
 st.sidebar.markdown("---")
 
@@ -162,7 +182,8 @@ with col_bot2:
     if RUTA_LOGO_CARP.exists(): st.image(str(RUTA_LOGO_CARP), width=80)
 
 # ── PROCESAMIENTO DE DATOS ───────────────────────────────────────────────────
-df_raw, estado = cargar_datos_completos()
+# Cargamos los datos del Excel seleccionado
+df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
 if estado != "OK":
     st.error(estado); st.stop()
 
@@ -190,7 +211,7 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 # ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
 
 if menu == "Resumen General":
-    st.markdown("<h1>🐔 Panel General del Equipo</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1>🐔 Panel General del Equipo - {temporada_sel}</h1>", unsafe_allow_html=True)
     st.markdown("---")
     
     st.subheader("📊 Promedios SofaScore")
@@ -213,7 +234,7 @@ if menu == "Resumen General":
         st.dataframe(df_agrupado[df_agrupado['Asistencias'] > 0][['Jugador', 'Asistencias']].sort_values('Asistencias', ascending=False).reset_index(drop=True), hide_index=True, use_container_width=True)
 
 elif menu == "Mapas de Rendimiento":
-    st.markdown("<h1>🗺️ Mapas de Rendimiento</h1>", unsafe_allow_html=True)
+    st.markdown(f"<h1>🗺️ Mapas de Rendimiento - {temporada_sel}</h1>", unsafe_allow_html=True)
     min_min = st.sidebar.slider("Minutos Mínimos", 0, int(df_agrupado['Minutos'].max()), 180)
     df_p90 = df_agrupado[df_agrupado['Minutos'] >= min_min].copy()
     df_p90['PasesClave_P90'] = (df_p90['Pases_Clave'] / df_p90['Minutos']) * 90
@@ -294,7 +315,7 @@ elif menu == "Análisis Individual":
             st.plotly_chart(fig_radar, use_container_width=True)
             
         with c_metrics:
-            st.markdown("#### 📋 Datos de Temporada")
+            st.markdown(f"#### 📋 Datos Temporada {temporada_sel}")
             st.metric("Promedio SofaScore", round(df_j['Nota SofaScore'].mean(), 2))
             st.metric("Minutos Jugados", int(df_j['Minutos'].sum()))
             st.metric("Participaciones en Goles", int(df_j['Goles'].sum() + df_j['Asistencias'].sum()))
@@ -310,10 +331,9 @@ elif menu == "Estadísticas de Equipo":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     
-    # NUEVO: Marcador inyectado automáticamente
-    mostrar_marcador(hojas[partido])
+    mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    df_equipo = extraer_estadisticas_equipo(str(EXCEL), hojas[partido])
+    df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
     
     st.divider()
     if not df_equipo.empty:
@@ -336,9 +356,8 @@ elif menu == "Estadísticas Individuales":
     partidos = df_raw['Partido'].unique()
     partido_seleccionado = st.selectbox("Seleccioná la fecha:", partidos)
     
-    # NUEVO: Marcador inyectado automáticamente
     hoja_original = df_raw[df_raw['Partido'] == partido_seleccionado]['Hoja_Original'].iloc[0]
-    mostrar_marcador(hoja_original)
+    mostrar_marcador(EXCEL_ACTUAL, hoja_original)
     
     df_p = df_raw[df_raw['Partido'] == partido_seleccionado].copy()
     
@@ -416,10 +435,9 @@ elif menu == "Parado Táctico":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
     
-    # NUEVO: Marcador inyectado automáticamente
-    mostrar_marcador(hojas[partido])
+    mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 0)
+    img = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 0)
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
 
@@ -428,9 +446,8 @@ elif menu == "Mapa de Tiros":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
     
-    # NUEVO: Marcador inyectado automáticamente
-    mostrar_marcador(hojas[partido])
+    mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 1)
+    img = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 1)
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
