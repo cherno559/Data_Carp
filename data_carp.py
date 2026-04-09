@@ -17,6 +17,9 @@ st.markdown("""
     .block-container { padding-top: 2rem; }
     [data-testid="stSidebar"] { border-right: 4px solid #ed1c24; background-color: #f8f9fa; }
     .sidebar-title { color: #000000 !important; font-family: 'Arial Black', sans-serif; font-size: 24px; margin-top: -20px; margin-bottom: 20px; }
+    .score-box { background-color: #ffffff; border: 2px solid #ed1c24; border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 25px; margin-top: 10px; }
+    .score-text { font-size: 32px; font-weight: bold; color: #000000; margin: 0; }
+    .score-label { margin: 0; font-size: 14px; color: gray; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -35,7 +38,7 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
-# ── CARGA DE DATOS ───────────────────────────────────────────────────────────
+# ── CARGA Y EXTRACCIÓN DE DATOS ──────────────────────────────────────────────
 @st.cache_data
 def cargar_datos_completos():
     if not EXCEL.exists():
@@ -82,8 +85,8 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
         df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
         row_idx, col_idx = None, None
         
-        for r in range(min(100, len(df))):
-            for c in range(min(10, len(df.columns))):
+        for r in range(min(120, len(df))):
+            for c in range(min(15, len(df.columns))):
                 val = str(df.iloc[r, c]).strip().lower()
                 if val == 'métrica' or val == 'metrica':
                     row_idx, col_idx = r, c
@@ -100,6 +103,39 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
         return pd.DataFrame()
     except:
         return pd.DataFrame()
+
+@st.cache_data
+def extraer_info_partido(ruta_excel_str, nombre_hoja):
+    """Extrae el marcador del Excel."""
+    try:
+        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
+        local, rival = "Local", "Rival"
+        g_local, g_rival = "?", "?"
+        
+        for r in range(min(120, len(df))):
+            for c in range(min(15, len(df.columns))):
+                val = str(df.iloc[r, c]).strip().lower()
+                if val in ['métrica', 'metrica']:
+                    local = str(df.iloc[r, c+1]).strip()
+                    rival = str(df.iloc[r, c+2]).strip()
+                if val == 'resultado':
+                    g_local = str(df.iloc[r, c+1]).strip()
+                    g_rival = str(df.iloc[r, c+2]).strip()
+                    return local, rival, g_local, g_rival
+        return local, rival, g_local, g_rival
+    except:
+        return "Local", "Rival", "?", "?"
+
+def mostrar_marcador(hoja_excel):
+    """Dibuja el cartel del resultado en la app."""
+    local, rival, g_local, g_rival = extraer_info_partido(str(EXCEL), hoja_excel)
+    if g_local != "?" and g_rival != "?":
+        st.markdown(f"""
+            <div class="score-box">
+                <p class="score-label">RESULTADO FINAL</p>
+                <p class="score-text">{local} {g_local} - {g_rival} {rival}</p>
+            </div>
+        """, unsafe_allow_html=True)
 
 # ── BARRA LATERAL (DOBLE PESTAÑA) ────────────────────────────────────────────
 col_nav1, col_nav2 = st.sidebar.columns([1, 2])
@@ -144,12 +180,11 @@ df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
-# ESTADO DE FORMA: Formateamos las últimas 5 notas en un texto claro y directo
+# ESTADO DE FORMA
 df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
     lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
 ).reset_index(name='Forma (Últ. 5)')
 
-# Unimos la tendencia al DataFrame agrupado
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 
 # ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
@@ -275,6 +310,9 @@ elif menu == "Estadísticas de Equipo":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     
+    # NUEVO: Marcador inyectado automáticamente
+    mostrar_marcador(hojas[partido])
+    
     df_equipo = extraer_estadisticas_equipo(str(EXCEL), hojas[partido])
     
     st.divider()
@@ -297,6 +335,10 @@ elif menu == "Estadísticas Individuales":
 
     partidos = df_raw['Partido'].unique()
     partido_seleccionado = st.selectbox("Seleccioná la fecha:", partidos)
+    
+    # NUEVO: Marcador inyectado automáticamente
+    hoja_original = df_raw[df_raw['Partido'] == partido_seleccionado]['Hoja_Original'].iloc[0]
+    mostrar_marcador(hoja_original)
     
     df_p = df_raw[df_raw['Partido'] == partido_seleccionado].copy()
     
@@ -373,6 +415,10 @@ elif menu == "Parado Táctico":
     st.markdown("<h1>📋 Parado Táctico</h1>", unsafe_allow_html=True)
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
+    
+    # NUEVO: Marcador inyectado automáticamente
+    mostrar_marcador(hojas[partido])
+    
     img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 0)
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
@@ -381,6 +427,10 @@ elif menu == "Mapa de Tiros":
     st.markdown("<h1>🎯 Mapa de Tiros</h1>", unsafe_allow_html=True)
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
+    
+    # NUEVO: Marcador inyectado automáticamente
+    mostrar_marcador(hojas[partido])
+    
     img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 1)
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
