@@ -10,7 +10,7 @@ import io
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
 st.set_page_config(page_title="Data CARP", page_icon="🐔", layout="wide")
 
-# ── ESTILOS CSS ──────────────────────────────────────────────────────────────
+# ── ESTILOS CSS (TEMA RIVER PLATE) ───────────────────────────────────────────
 st.markdown("""
     <style>
     h1, h2, h3, h4 { color: #ed1c24 !important; font-family: 'Arial Black', sans-serif; }
@@ -20,7 +20,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ── RUTAS Y LOGOS ────────────────────────────────────────────────────────────
+# ── RUTAS DINÁMICAS ──────────────────────────────────────────────────────────
 CARPETA = Path(__file__).parent
 archivos_excel = list(CARPETA.glob("*.xlsx"))
 EXCEL = archivos_excel[0] if archivos_excel else CARPETA / "Base_Datos_River_2026.xlsx"
@@ -31,7 +31,7 @@ RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
 
 DICCIONARIO_COLORES = {'DEF': '#1f77b4', 'MED': '#2ca02c', 'DEL': '#ed1c24', 'POR': '#ff7f0e'}
 
-# ── FUNCIONES DE CARGA ───────────────────────────────────────────────────────
+# ── FUNCIONES DE PROCESAMIENTO ───────────────────────────────────────────────
 
 def extraer_exitosos(valor):
     try:
@@ -196,7 +196,7 @@ elif menu == "Análisis Individual":
 elif menu == "Estadísticas de Equipo":
     st.markdown("<h1>⚖️ Estadísticas de Equipo</h1>", unsafe_allow_html=True)
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
-    partido = st.selectbox("Fecha:", list(hojas.keys()))
+    partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     df_team = extraer_estadisticas_equipo(str(EXCEL), hojas[partido])
     if not df_team.empty: st.dataframe(df_team, hide_index=True, use_container_width=True)
     else: st.warning("No se encontró la tabla en esta hoja.")
@@ -208,6 +208,7 @@ elif menu == "Estadísticas Individuales":
     df_p = df_raw[df_raw['Partido'] == partido_sel].copy()
     if 'Pases (Comp/Tot)' in df_p.columns: df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
     if 'Regates (Exit/Tot)' in df_p.columns: df_p['Regates Exitosos'] = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
+    if 'Duelos (Gan/Tot)' in df_p.columns: df_p['Duelos Ganados'] = df_p['Duelos (Gan/Tot)'].apply(extraer_exitosos)
     if 'Quites (Tackles)' in df_p.columns: df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
 
     st.divider()
@@ -218,12 +219,16 @@ elif menu == "Estadísticas Individuales":
     st.dataframe(df_p.nlargest(top_n, 'Quites')[['Jugador', 'Quites']], hide_index=True, use_container_width=True)
     st.markdown("### 🛑 Intercepciones")
     st.dataframe(df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']], hide_index=True, use_container_width=True)
+    st.markdown("### ⚔️ Duelos Ganados")
+    st.dataframe(df_p.nlargest(top_n, 'Duelos Ganados')[['Jugador', 'Duelos Ganados']], hide_index=True, use_container_width=True)
     st.markdown("### 🎯 Pases Completados")
     st.dataframe(df_p.nlargest(top_n, 'Pases Completados')[['Jugador', 'Pases Completados']], hide_index=True, use_container_width=True)
     st.markdown("### 🔑 Pases Clave")
-    st.dataframe(df_p[df_p['Pases Clave']>0].nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']], hide_index=True, use_container_width=True)
+    df_clave = df_p[df_p['Pases Clave'] > 0]
+    st.dataframe(df_clave.nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']], hide_index=True, use_container_width=True)
     st.markdown("### ⚡ Regates Exitosos")
-    st.dataframe(df_p[df_p['Regates Exitosos']>0].nlargest(top_n, 'Regates Exitosos')[['Jugador', 'Regates Exitosos']], hide_index=True, use_container_width=True)
+    df_reg = df_p[df_p['Regates Exitosos'] > 0]
+    st.dataframe(df_reg.nlargest(top_n, 'Regates Exitosos')[['Jugador', 'Regates Exitosos']], hide_index=True, use_container_width=True)
     st.markdown("### 👟 Tiros al Arco")
     st.dataframe(df_p.nlargest(top_n, 'Tiros al Arco')[['Jugador', 'Tiros al Arco']], hide_index=True, use_container_width=True)
 
