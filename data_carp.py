@@ -165,13 +165,15 @@ EXCEL_ACTUAL = temporadas_dict[temporada_sel]
 
 st.sidebar.markdown("---")
 
-categoria = st.sidebar.radio("Categoría de Análisis:", ["🏆 Por Temporada", "🗓️ Por Fecha"])
+categoria = st.sidebar.radio("Categoría de Análisis:", ["🏆 Por Temporada", "🗓️ Por Fecha", "🔧 Herramientas"])
 st.sidebar.markdown("---")
 
 if categoria == "🏆 Por Temporada":
     menu = st.sidebar.radio("Sección:", ["Resumen General", "Mapas de Rendimiento", "Análisis Individual"])
-else:
+elif categoria == "🗓️ Por Fecha":
     menu = st.sidebar.radio("Sección:", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"])
+else:  # Herramientas
+    menu = st.sidebar.radio("Sección:", ["Cara a Cara"])
 
 st.sidebar.markdown("<br><br><br><br>", unsafe_allow_html=True)
 col_bot1, col_bot2 = st.sidebar.columns(2)
@@ -206,6 +208,24 @@ df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
 ).reset_index(name='Forma (Últ. 5)')
 
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
+
+# ── FUNCIÓN AUXILIAR PARA CARGAR DATOS DE TODAS LAS TEMPORADAS ──────────────
+@st.cache_data
+def cargar_todas_las_temporadas():
+    """Carga y agrega datos de todas las temporadas disponibles"""
+    todos_datos = []
+    for anio, ruta in temporadas_dict.items():
+        df, estado = cargar_datos_completos(ruta)
+        if estado == "OK" and not df.empty:
+            df['Temporada'] = anio
+            todos_datos.append(df)
+    
+    if todos_datos:
+        df_completo = pd.concat(todos_datos, ignore_index=True)
+        if 'Efectividad Pases' in df_completo.columns:
+            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
+        return df_completo
+    return pd.DataFrame()
 
 # ── PÁGINAS: POR TEMPORADA ───────────────────────────────────────────────────
 
@@ -440,7 +460,6 @@ elif menu == "Parado Táctico":
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
 
-# ── SECCIÓN MODIFICADA: MAPA DE TIROS ──
 elif menu == "Mapa de Tiros":
     st.markdown("<h1>🎯 Mapa de Tiros</h1>", unsafe_allow_html=True)
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
@@ -463,3 +482,196 @@ elif menu == "Mapa de Tiros":
         st.image(img_rival, use_container_width=True)
     else: 
         st.warning("Mapa de tiros del rival no encontrado.")
+
+# ── PÁGINAS: HERRAMIENTAS ────────────────────────────────────────────────────
+
+elif menu == "Cara a Cara":
+    st.markdown("<h1>⚔️ Comparación Cara a Cara</h1>", unsafe_allow_html=True)
+    st.markdown("Compará el rendimiento de dos jugadores de distintas temporadas")
+    
+    # Cargar datos de todas las temporadas
+    df_todas_temporadas = cargar_todas_las_temporadas()
+    
+    if df_todas_temporadas.empty:
+        st.error("No se pudieron cargar los datos de las temporadas")
+        st.stop()
+    
+    # Agrupar datos por jugador y temporada
+    df_comparacion = df_todas_temporadas.groupby(['Jugador', 'Temporada', 'Posición'], as_index=False).agg(
+        Partidos=('Nota SofaScore', 'count'),
+        Promedio=('Nota SofaScore', 'mean'),
+        Minutos=('Minutos', 'sum'),
+        Goles=('Goles', 'sum'),
+        Asistencias=('Asistencias', 'sum'),
+        Pases_Clave=('Pases Clave', 'sum'),
+        Quites=('Quites (Tackles)', 'sum'),
+        Intercepciones=('Intercepciones', 'sum'),
+        Tiros_Totales=('Tiros Totales', 'sum'),
+        Efectividad_Pases=('Efectividad Pases', 'mean')
+    )
+    
+    st.markdown("---")
+    
+    # Selectores para jugadores
+    col_j1, col_j2 = st.columns(2)
+    
+    with col_j1:
+        st.markdown("### 🔴 Jugador 1")
+        temp1 = st.selectbox("Temporada:", anios_disponibles, key="temp1")
+        jugadores_temp1 = sorted(df_comparacion[df_comparacion['Temporada'] == temp1]['Jugador'].unique())
+        jugador1 = st.selectbox("Jugador:", jugadores_temp1, key="jug1")
+        
+    with col_j2:
+        st.markdown("### ⚪ Jugador 2")
+        temp2 = st.selectbox("Temporada:", anios_disponibles, key="temp2")
+        jugadores_temp2 = sorted(df_comparacion[df_comparacion['Temporada'] == temp2]['Jugador'].unique())
+        jugador2 = st.selectbox("Jugador:", jugadores_temp2, key="jug2")
+    
+    if jugador1 and jugador2:
+        # Obtener datos de cada jugador
+        datos_j1 = df_comparacion[(df_comparacion['Jugador'] == jugador1) & 
+                                   (df_comparacion['Temporada'] == temp1)].iloc[0]
+        datos_j2 = df_comparacion[(df_comparacion['Jugador'] == jugador2) & 
+                                   (df_comparacion['Temporada'] == temp2)].iloc[0]
+        
+        st.markdown("---")
+        
+        # Métricas generales comparativas
+        st.subheader("📊 Comparación de Estadísticas Generales")
+        col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+        
+        with col_m1:
+            st.metric(f"{jugador1} ({temp1})", f"{datos_j1['Promedio']:.2f}", 
+                     label="Promedio SofaScore", delta=None)
+            st.metric("", f"{datos_j2['Promedio']:.2f}", 
+                     label=f"{jugador2} ({temp2})",
+                     delta=f"{datos_j2['Promedio'] - datos_j1['Promedio']:.2f}")
+        
+        with col_m2:
+            st.metric(f"{jugador1}", int(datos_j1['Partidos']), label="Partidos")
+            st.metric(f"{jugador2}", int(datos_j2['Partidos']), label="Partidos",
+                     delta=int(datos_j2['Partidos'] - datos_j1['Partidos']))
+        
+        with col_m3:
+            st.metric(f"{jugador1}", int(datos_j1['Goles']), label="Goles")
+            st.metric(f"{jugador2}", int(datos_j2['Goles']), label="Goles",
+                     delta=int(datos_j2['Goles'] - datos_j1['Goles']))
+        
+        with col_m4:
+            st.metric(f"{jugador1}", int(datos_j1['Asistencias']), label="Asistencias")
+            st.metric(f"{jugador2}", int(datos_j2['Asistencias']), label="Asistencias",
+                     delta=int(datos_j2['Asistencias'] - datos_j1['Asistencias']))
+        
+        st.markdown("---")
+        
+        # Gráficos de radar comparativos
+        st.subheader("🛡️ Comparación de Perfiles Tácticos")
+        
+        metrics_radar = ['Goles', 'Asistencias', 'Pases_Clave', 'Quites', 'Intercepciones']
+        labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
+        
+        # Valores de cada jugador
+        valores_j1 = [datos_j1[m] for m in metrics_radar]
+        valores_j2 = [datos_j2[m] for m in metrics_radar]
+        
+        # Máximos globales para normalización
+        maximos_globales = [df_comparacion[m].max() for m in metrics_radar]
+        
+        # Normalizar a escala 0-100
+        valores_j1_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(valores_j1, maximos_globales)]
+        valores_j2_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(valores_j2, maximos_globales)]
+        
+        # Crear gráfico de radar comparativo
+        fig_radar_comparativo = go.Figure()
+        
+        # Jugador 1 (rojo)
+        fig_radar_comparativo.add_trace(go.Scatterpolar(
+            r=valores_j1_norm + [valores_j1_norm[0]],
+            theta=labels_radar + [labels_radar[0]],
+            fill='toself',
+            fillcolor='rgba(237,28,36,0.3)',
+            line=dict(color='#ed1c24', width=3),
+            marker=dict(color='#ed1c24', size=8),
+            name=f"{jugador1} ({temp1})",
+            hoverinfo='text',
+            text=[f"{labels_radar[i]}: {valores_j1[i]}" for i in range(len(labels_radar))] + 
+                 [f"{labels_radar[0]}: {valores_j1[0]}"]
+        ))
+        
+        # Jugador 2 (blanco/gris)
+        fig_radar_comparativo.add_trace(go.Scatterpolar(
+            r=valores_j2_norm + [valores_j2_norm[0]],
+            theta=labels_radar + [labels_radar[0]],
+            fill='toself',
+            fillcolor='rgba(128,128,128,0.2)',
+            line=dict(color='#808080', width=3),
+            marker=dict(color='#808080', size=8),
+            name=f"{jugador2} ({temp2})",
+            hoverinfo='text',
+            text=[f"{labels_radar[i]}: {valores_j2[i]}" for i in range(len(labels_radar))] + 
+                 [f"{labels_radar[0]}: {valores_j2[0]}"]
+        ))
+        
+        fig_radar_comparativo.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True, 
+                    range=[0, 100], 
+                    showticklabels=False, 
+                    gridcolor="LightGray"
+                ),
+                angularaxis=dict(
+                    gridcolor="LightGray", 
+                    tickfont=dict(size=12, family="Arial Black")
+                )
+            ),
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=-0.2,
+                xanchor="center",
+                x=0.5,
+                font=dict(size=14, family="Arial Black")
+            ),
+            margin=dict(l=80, r=80, t=40, b=80),
+            height=600
+        )
+        
+        st.plotly_chart(fig_radar_comparativo, use_container_width=True)
+        
+        st.markdown("---")
+        
+        # Tabla comparativa detallada
+        st.subheader("📋 Tabla Comparativa Detallada")
+        
+        datos_tabla = pd.DataFrame({
+            'Métrica': ['Promedio SofaScore', 'Partidos', 'Minutos', 'Goles', 'Asistencias', 
+                       'Pases Clave', 'Quites', 'Intercepciones', 'Tiros Totales', 'Efect. Pases %'],
+            f'{jugador1} ({temp1})': [
+                f"{datos_j1['Promedio']:.2f}",
+                int(datos_j1['Partidos']),
+                int(datos_j1['Minutos']),
+                int(datos_j1['Goles']),
+                int(datos_j1['Asistencias']),
+                int(datos_j1['Pases_Clave']),
+                int(datos_j1['Quites']),
+                int(datos_j1['Intercepciones']),
+                int(datos_j1['Tiros_Totales']),
+                f"{datos_j1['Efectividad_Pases']:.1f}"
+            ],
+            f'{jugador2} ({temp2})': [
+                f"{datos_j2['Promedio']:.2f}",
+                int(datos_j2['Partidos']),
+                int(datos_j2['Minutos']),
+                int(datos_j2['Goles']),
+                int(datos_j2['Asistencias']),
+                int(datos_j2['Pases_Clave']),
+                int(datos_j2['Quites']),
+                int(datos_j2['Intercepciones']),
+                int(datos_j2['Tiros_Totales']),
+                f"{datos_j2['Efectividad_Pases']:.1f}"
+            ]
+        })
+        
+        st.dataframe(datos_tabla, hide_index=True, use_container_width=True)
