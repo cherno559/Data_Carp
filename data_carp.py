@@ -28,10 +28,8 @@ def extraer_exitosos(valor):
 
 @st.cache_data
 def cargar_datos():
-   ruta_archivo = "Base_Datos_River_2026.csv
-    
-    # ⚠️ REEMPLAZÁ ESTO POR EL NOMBRE EXACTO DE TU ARCHIVO EN GITHUB ⚠️
-    ruta_archivo = "base_unificada.csv" 
+    # ACÁ ESTÁ CORREGIDO: Una sola línea, con las comillas cerradas
+    ruta_archivo = "Base_Datos_River_2026.csv"
     
     if os.path.exists(ruta_archivo):
         df = pd.read_csv(ruta_archivo)
@@ -56,7 +54,7 @@ st.markdown("Plataforma de análisis de rendimiento individual y colectivo.")
 df_stats = cargar_datos()
 
 if df_stats.empty:
-    st.error(f"⚠️ No se encontró la base de datos. Verificá que el archivo se llame exactamente como figura en la línea 31 del código.")
+    st.error(f"⚠️ No se encontró la base de datos. Verificá que el archivo se llame exactamente 'Base_Datos_River_2026.csv' en tu repositorio.")
     st.stop()
 
 # ==========================================
