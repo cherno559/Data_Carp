@@ -86,7 +86,8 @@ with col_nav2:
     st.markdown('<p class="sidebar-title">Data<br>CARP</p>', unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
-menu = st.sidebar.radio("Navegación:", ["Resumen General", "Mapas de Rendimiento", "Análisis Individual", "Parado Táctico", "Mapa de Tiros"])
+# AGREGADO: Nueva opción en el menú
+menu = st.sidebar.radio("Navegación:", ["Resumen General", "Mapas de Rendimiento", "Análisis Individual", "Parado Táctico", "Mapa de Tiros", "Partido a partido"])
 
 st.sidebar.markdown("<br><br><br><br>", unsafe_allow_html=True)
 col_bot1, col_bot2 = st.sidebar.columns(2)
@@ -186,3 +187,83 @@ elif menu == "Mapa de Tiros":
     img = extraer_imagen_incrustada(str(EXCEL), hojas[partido], 1)
     if img: st.image(img, use_container_width=True)
     else: st.warning("Imagen no encontrada.")
+
+# -----------------------------------------------------------------------------
+# NUEVA PESTAÑA: PARTIDO A PARTIDO (TOP 7)
+# -----------------------------------------------------------------------------
+elif menu == "Partido a partido":
+    st.markdown("<h1>⚽ Análisis Partido a Partido</h1>", unsafe_allow_html=True)
+    st.markdown("Seleccioná un partido para ver el **Top 7** de rendimiento en las métricas clave.")
+    
+    # Función para extraer el primer número de las columnas de texto ('15/20 -> 15)
+    def extraer_exitosos(valor):
+        try:
+            if isinstance(valor, str):
+                return int(valor.replace("'", "").split('/')[0])
+            return int(valor)
+        except:
+            return 0
+
+    # Selector de partido usando la base ya cargada
+    partidos = df_raw['Partido'].unique()
+    partido_seleccionado = st.selectbox("Seleccioná la fecha:", partidos)
+    
+    # Filtramos la base para el partido seleccionado
+    df_p = df_raw[df_raw['Partido'] == partido_seleccionado].copy()
+    
+    # Limpiamos las columnas con datos fraccionados ('X/Y') solo para esta vista
+    if 'Pases (Comp/Tot)' in df_p.columns:
+        df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
+    if 'Duelos (Gan/Tot)' in df_p.columns:
+        df_p['Duelos Ganados'] = df_p['Duelos (Gan/Tot)'].apply(extraer_exitosos)
+    if 'Regates (Exit/Tot)' in df_p.columns:
+        df_p['Regates Exitosos'] = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
+        
+    # Aseguramos que las efectividades sean números para poder desempatar correctamente
+    cols_a_num = ['Efectividad Pases', 'Efectividad Duelos', 'Efectividad Regates', 'Tiros al Arco', 'Tiros Totales']
+    for col in cols_a_num:
+        if col in df_p.columns:
+            df_p[col] = pd.to_numeric(df_p[col], errors='coerce').fillna(0)
+
+    st.divider()
+    st.subheader(f"🏆 Top 7 - {partido_seleccionado}")
+
+    col1, col2, col3 = st.columns(3)
+    top_n = 7
+
+    with col1:
+        st.markdown("**⭐ Nota SofaScore**")
+        if 'Nota SofaScore' in df_p.columns:
+            top_nota = df_p.nlargest(top_n, 'Nota SofaScore')[['Jugador', 'Nota SofaScore']]
+            st.dataframe(top_nota, hide_index=True, use_container_width=True)
+        
+        st.markdown("**🎯 Pases Completados**")
+        # Se ordena por Mayor cantidad de pases, y se desempata por mejor efectividad
+        if 'Pases Completados' in df_p.columns and 'Efectividad Pases' in df_p.columns:
+            top_pases = df_p.sort_values(by=['Pases Completados', 'Efectividad Pases'], ascending=[False, False]).head(top_n)[['Jugador', 'Pases Completados', 'Efectividad Pases']]
+            st.dataframe(top_pases, hide_index=True, use_container_width=True)
+
+    with col2:
+        st.markdown("**🛡️ Quites (Tackles)**")
+        if 'Quites (Tackles)' in df_p.columns:
+            top_quites = df_p.nlargest(top_n, 'Quites (Tackles)')[['Jugador', 'Quites (Tackles)']]
+            st.dataframe(top_quites, hide_index=True, use_container_width=True)
+        
+        st.markdown("**⚔️ Duelos Ganados**")
+        # Se ordena por Mayores duelos ganados, y se desempata por mejor efectividad
+        if 'Duelos Ganados' in df_p.columns and 'Efectividad Duelos' in df_p.columns:
+            top_duelos = df_p.sort_values(by=['Duelos Ganados', 'Efectividad Duelos'], ascending=[False, False]).head(top_n)[['Jugador', 'Duelos Ganados', 'Efectividad Duelos']]
+            st.dataframe(top_duelos, hide_index=True, use_container_width=True)
+
+    with col3:
+        st.markdown("**👟 Tiros al Arco**")
+        # Se ordena por Tiros al Arco, y se desempata por el que intentó más Tiros Totales
+        if 'Tiros al Arco' in df_p.columns and 'Tiros Totales' in df_p.columns:
+            top_tiros = df_p.sort_values(by=['Tiros al Arco', 'Tiros Totales'], ascending=[False, False]).head(top_n)[['Jugador', 'Tiros al Arco', 'Tiros Totales']]
+            st.dataframe(top_tiros, hide_index=True, use_container_width=True)
+        
+        st.markdown("**⚡ Regates Exitosos**")
+        # Se ordena por Regates Exitosos, y se desempata por mejor efectividad
+        if 'Regates Exitosos' in df_p.columns and 'Efectividad Regates' in df_p.columns:
+            top_regates = df_p.sort_values(by=['Regates Exitosos', 'Efectividad Regates'], ascending=[False, False]).head(top_n)[['Jugador', 'Regates Exitosos', 'Efectividad Regates']]
+            st.dataframe(top_regates, hide_index=True, use_container_width=True)
