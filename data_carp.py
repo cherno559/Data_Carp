@@ -537,31 +537,41 @@ elif menu == "Cara a Cara":
         st.markdown("---")
         
         # Métricas generales comparativas
-        st.subheader("📊 Comparación de Estadísticas Generales")
+       st.subheader("📊 Comparación de Estadísticas Generales")
         col_m1, col_m2, col_m3, col_m4 = st.columns(4)
         
         with col_m1:
-            st.metric(f"{jugador1} ({temp1})", f"{datos_j1['Promedio']:.2f}", 
-                     label="Promedio SofaScore", delta=None)
-            st.metric("", f"{datos_j2['Promedio']:.2f}", 
-                     label=f"{jugador2} ({temp2})",
+            st.metric(label="Promedio SofaScore",
+                     value=f"{datos_j1['Promedio']:.2f}",
+                     delta=None,
+                     help=f"{jugador1} ({temp1})")
+            st.metric(label=f"{jugador2} ({temp2})",
+                     value=f"{datos_j2['Promedio']:.2f}",
                      delta=f"{datos_j2['Promedio'] - datos_j1['Promedio']:.2f}")
         
         with col_m2:
-            st.metric(f"{jugador1}", int(datos_j1['Partidos']), label="Partidos")
-            st.metric(f"{jugador2}", int(datos_j2['Partidos']), label="Partidos",
+            st.metric(label="Partidos",
+                     value=int(datos_j1['Partidos']),
+                     help=f"{jugador1} ({temp1})")
+            st.metric(label=f"{jugador2} ({temp2})",
+                     value=int(datos_j2['Partidos']),
                      delta=int(datos_j2['Partidos'] - datos_j1['Partidos']))
         
         with col_m3:
-            st.metric(f"{jugador1}", int(datos_j1['Goles']), label="Goles")
-            st.metric(f"{jugador2}", int(datos_j2['Goles']), label="Goles",
+            st.metric(label="Goles",
+                     value=int(datos_j1['Goles']),
+                     help=f"{jugador1} ({temp1})")
+            st.metric(label=f"{jugador2} ({temp2})",
+                     value=int(datos_j2['Goles']),
                      delta=int(datos_j2['Goles'] - datos_j1['Goles']))
         
         with col_m4:
-            st.metric(f"{jugador1}", int(datos_j1['Asistencias']), label="Asistencias")
-            st.metric(f"{jugador2}", int(datos_j2['Asistencias']), label="Asistencias",
+            st.metric(label="Asistencias",
+                     value=int(datos_j1['Asistencias']),
+                     help=f"{jugador1} ({temp1})")
+            st.metric(label=f"{jugador2} ({temp2})",
+                     value=int(datos_j2['Asistencias']),
                      delta=int(datos_j2['Asistencias'] - datos_j1['Asistencias']))
-        
         st.markdown("---")
         
         # Gráficos de radar comparativos
