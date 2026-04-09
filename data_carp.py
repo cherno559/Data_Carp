@@ -244,4 +244,38 @@ elif menu == "Partido a partido":
     # 3. PASES CLAVE (Acá filtramos para mostrar solo a los que tienen más de 0)
     st.markdown("### 🔑 Pases Clave")
     if 'Pases Clave' in df_p.columns:
-        top_pases_clave = df_p[df_p['Pases Clave'] > 0].
+        top_pases_clave = df_p[df_p['Pases Clave'] > 0].nlargest(top_n, 'Pases Clave')[['Jugador', 'Pases Clave']]
+        if not top_pases_clave.empty:
+            st.dataframe(top_pases_clave, hide_index=True, use_container_width=True)
+        else:
+            st.info("Ningún jugador registró pases clave en este partido.")
+
+    # 4. QUITES
+    st.markdown("### 🛡️ Quites (Tackles)")
+    if 'Quites (Tackles)' in df_p.columns:
+        top_quites = df_p.nlargest(top_n, 'Quites (Tackles)')[['Jugador', 'Quites (Tackles)']]
+        st.dataframe(top_quites, hide_index=True, use_container_width=True)
+
+    # 5. INTERCEPCIONES
+    st.markdown("### 🛑 Intercepciones")
+    if 'Intercepciones' in df_p.columns:
+        top_intercepciones = df_p.nlargest(top_n, 'Intercepciones')[['Jugador', 'Intercepciones']]
+        st.dataframe(top_intercepciones, hide_index=True, use_container_width=True)
+
+    # 6. DUELOS GANADOS
+    st.markdown("### ⚔️ Duelos Ganados")
+    if 'Duelos Ganados' in df_p.columns and 'Efectividad Duelos' in df_p.columns:
+        top_duelos = df_p.sort_values(by=['Duelos Ganados', 'Efectividad Duelos'], ascending=[False, False]).head(top_n)[['Jugador', 'Duelos Ganados', 'Efectividad Duelos']]
+        st.dataframe(top_duelos, hide_index=True, use_container_width=True)
+
+    # 7. TIROS AL ARCO
+    st.markdown("### 👟 Tiros al Arco")
+    if 'Tiros al Arco' in df_p.columns and 'Tiros Totales' in df_p.columns:
+        top_tiros = df_p.sort_values(by=['Tiros al Arco', 'Tiros Totales'], ascending=[False, False]).head(top_n)[['Jugador', 'Tiros al Arco', 'Tiros Totales']]
+        st.dataframe(top_tiros, hide_index=True, use_container_width=True)
+    
+    # 8. REGATES EXITOSOS
+    st.markdown("### ⚡ Regates Exitosos")
+    if 'Regates Exitosos' in df_p.columns and 'Efectividad Regates' in df_p.columns:
+        top_regates = df_p.sort_values(by=['Regates Exitosos', 'Efectividad Regates'], ascending=[False, False]).head(top_n)[['Jugador', 'Regates Exitosos', 'Efectividad Regates']]
+        st.dataframe(top_regates, hide_index=True, use_container_width=True)
