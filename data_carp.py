@@ -308,12 +308,6 @@ h1.page-title {
     font-weight: 700 !important;
 }
 
-/* === BADGES DE POSICIÓN === */
-.badge-DEF { background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
-.badge-MED { background:#dcfce7; color:#15803d; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
-.badge-DEL { background:#fee2e2; color:#b91c1c; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
-.badge-POR { background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; font-family:'Rajdhani',sans-serif; letter-spacing:1px; }
-
 /* === INFO BOXES === */
 .info-box {
     background: var(--red-light);
@@ -542,30 +536,6 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
         return None
 
 @st.cache_data
-def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
-    try:
-        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
-        row_idx, col_idx = None, None
-        for r in range(min(120, len(df))):
-            for c in range(min(15, len(df.columns))):
-                val = str(df.iloc[r, c]).strip().lower()
-                if val in ['métrica', 'metrica']:
-                    row_idx, col_idx = r, c
-                    break
-            if row_idx is not None:
-                break
-        if row_idx is not None:
-            df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
-            df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
-            df_team = df_team.dropna(subset=[df_team.columns[0]])
-            df_team = df_team[df_team[df_team.columns[0]].astype(str).str.strip() != '']
-            df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
-            return df_team
-        return pd.DataFrame()
-    except:
-        return pd.DataFrame()
-
-@st.cache_data
 def extraer_info_partido(ruta_excel_str, nombre_hoja):
     try:
         df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
@@ -584,6 +554,51 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
         return local, rival, g_local, g_rival
     except:
         return "Local", "Rival", "?", "?"
+
+@st.cache_data
+def generar_historial_rivales(ruta_excel_str, hojas):
+    """Genera la tabla de historial (W/D/L) leyendo todos los resultados del año"""
+    historial = {}
+    for hoja in hojas:
+        local, rival, g_local, g_rival = extraer_info_partido(ruta_excel_str, hoja)
+        if g_local == "?" or g_rival == "?": continue
+        
+        # Función interna para limpiar los penales y obtener los goles del partido
+        # Ej: "1 (4)" se transforma en el entero 1.
+        def clean_goals(g_str):
+            m = re.match(r'^(\d+)', str(g_str).strip())
+            return int(m.group(1)) if m else 0
+            
+        gl = clean_goals(g_local)
+        gv = clean_goals(g_rival)
+        
+        # Identificamos de qué lado está River
+        if 'River' in local:
+            equipo_rival = rival
+            gf = gl
+            gc = gv
+        else:
+            equipo_rival = local
+            gf = gv
+            gc = gl
+            
+        if equipo_rival not in historial:
+            historial[equipo_rival] = {'PJ': 0, 'PG': 0, 'PE': 0, 'PP': 0, 'GF': 0, 'GC': 0}
+            
+        historial[equipo_rival]['PJ'] += 1
+        historial[equipo_rival]['GF'] += gf
+        historial[equipo_rival]['GC'] += gc
+        
+        if gf > gc: historial[equipo_rival]['PG'] += 1
+        elif gf < gc: historial[equipo_rival]['PP'] += 1
+        else: historial[equipo_rival]['PE'] += 1
+        
+    df_hist = pd.DataFrame.from_dict(historial, orient='index').reset_index()
+    df_hist.rename(columns={'index': 'Rival'}, inplace=True)
+    if not df_hist.empty:
+        df_hist['DIF'] = df_hist['GF'] - df_hist['GC']
+        df_hist = df_hist.sort_values(by=['PJ', 'PG', 'DIF'], ascending=[False, False, False])
+    return df_hist
 
 def mostrar_marcador(ruta_excel, hoja_excel):
     local, rival, g_local, g_rival = extraer_info_partido(str(ruta_excel), hoja_excel)
@@ -640,7 +655,8 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Resumen General", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
+        # 🔥 ACÁ SE AGREGÓ "Historial" AL MENÚ
+        menu = st.radio("", ["Resumen General", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
@@ -799,6 +815,74 @@ if menu == "Resumen General":
             use_container_width=True,
             height=500,
         )
+
+# ─── HISTORIAL (NUEVA SECCIÓN) ────────────────────────────────────────────────
+elif menu == "Historial":
+    page_header("📖", "HISTORIAL VS RIVALES", f"Temporada {temporada_sel}")
+    
+    hojas_unicas = df_raw.drop_duplicates('Partido')['Hoja_Original'].tolist()
+    df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas)
+    
+    if df_historial.empty:
+        st.info("No hay datos suficientes para armar el historial en esta temporada.")
+    else:
+        # KPIs Rápidos
+        total_pj = df_historial['PJ'].sum()
+        total_pg = df_historial['PG'].sum()
+        total_pe = df_historial['PE'].sum()
+        total_pp = df_historial['PP'].sum()
+        efectividad = (total_pg * 3 + total_pe) / (total_pj * 3) * 100 if total_pj > 0 else 0
+        
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Partidos Jugados", int(total_pj))
+        c2.metric("Victorias", int(total_pg))
+        c3.metric("Empates", int(total_pe))
+        c4.metric("Derrotas", int(total_pp))
+        c5.metric("Efectividad Puntos", f"{efectividad:.1f}%")
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        c_graf, c_tabla = st.columns([1.5, 1])
+        
+        with c_graf:
+            st.markdown("<div class='section-title'>📊 EFECTIVIDAD POR RIVAL</div>", unsafe_allow_html=True)
+            # Gráfico de Barras Apiladas (Wins, Draws, Losses)
+            df_hist_graf = df_historial.sort_values(by='PJ', ascending=True) # Sort para que los que tienen más PJ salgan arriba
+            
+            fig_hist = go.Figure()
+            fig_hist.add_trace(go.Bar(
+                y=df_hist_graf['Rival'], x=df_hist_graf['PG'], 
+                name='Ganados', orientation='h', marker=dict(color='#22C55E'),
+                text=df_hist_graf['PG'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
+            ))
+            fig_hist.add_trace(go.Bar(
+                y=df_hist_graf['Rival'], x=df_hist_graf['PE'], 
+                name='Empatados', orientation='h', marker=dict(color='#9CA3AF'),
+                text=df_hist_graf['PE'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
+            ))
+            fig_hist.add_trace(go.Bar(
+                y=df_hist_graf['Rival'], x=df_hist_graf['PP'], 
+                name='Perdidos', orientation='h', marker=dict(color='#EF4444'),
+                text=df_hist_graf['PP'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
+            ))
+            
+            apply_plotly_style(fig_hist, xaxis_title="Cantidad de Partidos", yaxis_title="")
+            fig_hist.update_layout(
+                barmode='stack',
+                height=max(400, len(df_hist_graf) * 35),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            )
+            st.plotly_chart(fig_hist, use_container_width=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
+
+        with c_tabla:
+            st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
+            st.dataframe(
+                df_historial[['Rival', 'PJ', 'PG', 'PE', 'PP', 'GF', 'GC', 'DIF']],
+                hide_index=True,
+                use_container_width=True,
+                height=600
+            )
 
 # ─── MAPAS DE RENDIMIENTO ─────────────────────────────────────────────────────
 elif menu == "Mapas de Rendimiento":
