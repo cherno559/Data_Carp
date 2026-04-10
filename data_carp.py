@@ -5,7 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from pathlib import Path
 from openpyxl import load_workbook
-import io
 import re
 
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
@@ -151,12 +150,6 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 .footer { text-align: center; padding: 24px 0 8px 0; font-family: 'Rajdhani', sans-serif;
     font-size: 12px; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase;
     border-top: 1px solid var(--gray-200); margin-top: 48px; }
-
-/* Badge de tipo de movimiento */
-.badge-transfer { color: #15803D; font-weight: 700; }
-.badge-loan     { color: #1D4ED8; font-weight: 700; }
-.badge-free     { color: #374151; font-weight: 700; }
-.badge-return   { color: #7C3AED; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -202,7 +195,6 @@ CARPETA = Path(__file__).parent
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
 RUTA_LOGO_RETRO  = CARPETA / "logo_river_retro.png"
 RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
-RUTA_MERCADO     = CARPETA / "Mercado_de_Pases_River.xlsx"
 
 # ── DETECCIÓN DE TEMPORADAS ───────────────────────────────────────────────────
 archivos_disponibles = list(CARPETA.glob("Base_Datos_River_*.xlsx"))
@@ -247,35 +239,6 @@ def cargar_datos_completos(ruta_excel):
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
 
 @st.cache_data
-def cargar_todas_las_temporadas():
-    todos_datos = []
-    for anio, ruta in temporadas_dict.items():
-        df, estado = cargar_datos_completos(ruta)
-        if estado == "OK" and not df.empty:
-            df['Temporada'] = anio
-            todos_datos.append(df)
-    if todos_datos:
-        df_completo = pd.concat(todos_datos, ignore_index=True)
-        if 'Efectividad Pases' in df_completo.columns:
-            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
-        return df_completo
-    return pd.DataFrame()
-
-@st.cache_data
-def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
-    try:
-        wb = load_workbook(ruta_excel_str, data_only=True)
-        if nombre_hoja in wb.sheetnames:
-            ws = wb[nombre_hoja]
-            if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
-                img = ws._images[indice_imagen]
-                return img._data() if callable(img._data) else img._data
-        return None
-    except:
-        return None
-
-# ✅ SOLUCIÓN AL ERROR DE ESTADÍSTICAS DE EQUIPO
-@st.cache_data
 def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
     try:
         df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
@@ -297,6 +260,19 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
         return pd.DataFrame()
     except:
         return pd.DataFrame()
+
+@st.cache_data
+def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
+    try:
+        wb = load_workbook(ruta_excel_str, data_only=True)
+        if nombre_hoja in wb.sheetnames:
+            ws = wb[nombre_hoja]
+            if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
+                img = ws._images[indice_imagen]
+                return img._data() if callable(img._data) else img._data
+        return None
+    except:
+        return None
 
 @st.cache_data
 def extraer_info_partido(ruta_excel_str, nombre_hoja):
@@ -405,65 +381,6 @@ def generar_historial_completo():
         df_hist = df_hist.sort_values(by=['PJ', 'PG', 'DIF'], ascending=[False, False, False])
     return df_hist
 
-# ── CARGA MERCADO DE PASES ────────────────────────────────────────────────────
-@st.cache_data
-def cargar_mercado_pases():
-    if not RUTA_MERCADO.exists():
-        return pd.DataFrame()
-
-    xl = pd.ExcelFile(RUTA_MERCADO)
-    todas = []
-    for hoja in xl.sheet_names:
-        try:
-            df = pd.read_excel(RUTA_MERCADO, sheet_name=hoja, header=0)
-            df.columns = ['nombre', 'tipo', 'coste', 'club', 'periodo']
-            df = df.dropna(subset=['nombre', 'tipo'])
-            df['nombre'] = df['nombre'].astype(str).str.strip()
-            df['tipo']   = df['tipo'].astype(str).str.strip()
-            df['coste']  = df['coste'].astype(str).str.strip()
-            df['club']   = df['club'].astype(str).str.strip()
-            df['Temporada'] = str(hoja)
-            todas.append(df)
-        except Exception:
-            continue
-
-    if not todas:
-        return pd.DataFrame()
-
-    df_all = pd.concat(todas, ignore_index=True)
-    df_all = df_all[df_all['tipo'].isin(['Alta', 'Baja'])]
-
-    def clasificar_movimiento(coste_str):
-        c = str(coste_str).strip()
-        if 'mill' in c.lower():
-            return 'Cesión con Coste' if 'Coste de cesión' in c else 'Transferencia'
-        if 'mil €' in c.lower():
-            return 'Transferencia'
-        if 'libre / fin' in c.lower():
-            return 'Libre / Fin de Préstamo'
-        if c.lower() in ['libre'] or 'libre' in c.lower():
-            return 'Libre'
-        if 'fin de cesión' in c.lower():
-            return 'Fin de Cesión'
-        if c.lower() in ['cesión', 'cesion'] or c.lower().startswith('cesión'):
-            return 'Cesión'
-        return 'Otro'
-
-    df_all['categoria'] = df_all['coste'].apply(clasificar_movimiento)
-
-    def extraer_valor(coste_str):
-        c = str(coste_str)
-        m = re.search(r'([\d,\.]+)\s*mill', c)
-        if m:
-            return float(m.group(1).replace(',', '.'))
-        m = re.search(r'([\d,\.]+)\s*mil\s*€', c)
-        if m:
-            return round(float(m.group(1).replace(',', '.')) / 1000, 3)
-        return 0.0
-
-    df_all['valor_mill'] = df_all['coste'].apply(extraer_valor)
-    return df_all
-
 def mostrar_marcador(ruta_excel, hoja_excel):
     local, rival, g_local, g_rival = extraer_info_partido(str(ruta_excel), hoja_excel)
     if g_local != "?" and g_rival != "?":
@@ -518,7 +435,7 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Resumen General", "Mercado de Pases", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
+        menu = st.radio("", ["Resumen General", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
@@ -542,36 +459,34 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
-if menu != "Mercado de Pases":
-    df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
-    if estado != "OK":
-        st.error(estado)
-        st.stop()
+# ── CARGA Y PROCESAMIENTO GENERAL ─────────────────────────────────────────────
+df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
+if estado != "OK":
+    st.error(estado)
+    st.stop()
 
-    if 'Efectividad Pases' in df_raw.columns:
-        df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
+if 'Efectividad Pases' in df_raw.columns:
+    df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
-    df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
-        Partidos=('Nota SofaScore', 'count'),
-        Promedio=('Nota SofaScore', 'mean'),
-        Minutos=('Minutos', 'sum'),
-        Goles=('Goles', 'sum'),
-        Asistencias=('Asistencias', 'sum'),
-        Pases_Clave=('Pases Clave', 'sum'),
-        Quites=('Quites (Tackles)', 'sum'),
-        Intercepciones=('Intercepciones', 'sum'),
-        Tiros_Totales=('Tiros Totales', 'sum'),
-        Efectividad_Pases=('Efectividad Pases', 'mean')
-    )
-    df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
-    df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
+df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
+    Partidos=('Nota SofaScore', 'count'),
+    Promedio=('Nota SofaScore', 'mean'),
+    Minutos=('Minutos', 'sum'),
+    Goles=('Goles', 'sum'),
+    Asistencias=('Asistencias', 'sum'),
+    Pases_Clave=('Pases Clave', 'sum'),
+    Quites=('Quites (Tackles)', 'sum'),
+    Intercepciones=('Intercepciones', 'sum'),
+    Tiros_Totales=('Tiros Totales', 'sum'),
+    Efectividad_Pases=('Efectividad Pases', 'mean')
+)
+df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
+df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
-    df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
-        lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
-    ).reset_index(name='Forma (Últ. 5)')
-    df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
-
+df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
+    lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
+).reset_index(name='Forma (Últ. 5)')
+df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 
 # =============================================================================
 # PÁGINAS
@@ -660,344 +575,6 @@ if menu == "Resumen General":
                           'Pases_Clave', 'Quites', 'Intercepciones', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True),
             hide_index=True, use_container_width=True, height=500,
         )
-
-# ─── MERCADO DE PASES ─────────────────────────────────────────────────────────
-elif menu == "Mercado de Pases":
-    page_header("💰", "MERCADO DE PASES", f"Temporada {temporada_sel} · Altas, Bajas y Movimientos")
-
-    df_mp_full = cargar_mercado_pases()
-
-    if df_mp_full.empty:
-        st.error("⚠️ No se encontró el archivo Mercado_de_Pases_River.xlsx en la carpeta de la app.")
-        st.stop()
-
-    df_mp = df_mp_full[df_mp_full['Temporada'] == str(temporada_sel)].copy()
-
-    if df_mp.empty:
-        st.warning(f"No hay datos de mercado de pases para la temporada {temporada_sel}.")
-        st.stop()
-
-    altas = df_mp[df_mp['tipo'] == 'Alta']
-    bajas = df_mp[df_mp['tipo'] == 'Baja']
-
-    ingresos  = bajas['valor_mill'].sum()
-    gastos    = altas['valor_mill'].sum()
-    balance   = ingresos - gastos
-    n_altas   = len(altas)
-    n_bajas   = len(bajas)
-
-    k1, k2, k3, k4, k5 = st.columns(5)
-    k1.metric("Incorporaciones", int(n_altas))
-    k2.metric("Salidas", int(n_bajas))
-    k3.metric("Inversión Total", f"€{gastos:.2f}M")
-    k4.metric("Ingresos Totales", f"€{ingresos:.2f}M")
-    k5.metric("Balance Neto", f"€{balance:+.2f}M",
-              delta="Superávit ✅" if balance >= 0 else "Déficit ❌")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    tab_resumen, tab_altas_t, tab_bajas_t, tab_historico = st.tabs([
-        "📊 Resumen Visual", "🟢 Altas Detalladas", "🔴 Bajas Detalladas", "📈 Histórico Multi-Temporada"
-    ])
-
-    # ── TAB 1: RESUMEN VISUAL
-    with tab_resumen:
-        col_pie, col_bar = st.columns([1, 1.6])
-
-        with col_pie:
-            st.markdown("<div class='section-title' style='font-size:20px;'>🔄 TIPOS DE MOVIMIENTOS</div>", unsafe_allow_html=True)
-            cat_counts = df_mp['categoria'].value_counts().reset_index()
-            cat_counts.columns = ['Categoría', 'Cantidad']
-
-            COLORES_CAT = {
-                'Transferencia':        '#D0021B',
-                'Cesión con Coste':     '#F97316',
-                'Libre':                '#6B7280',
-                'Cesión':               '#3B82F6',
-                'Fin de Cesión':        '#8B5CF6',
-                'Libre / Fin de Préstamo': '#9CA3AF',
-                'Otro':                 '#E5E7EB',
-            }
-            colors_pie = [COLORES_CAT.get(c, '#9CA3AF') for c in cat_counts['Categoría']]
-
-            fig_pie = go.Figure(go.Pie(
-                labels=cat_counts['Categoría'], values=cat_counts['Cantidad'],
-                hole=0.52,
-                marker=dict(colors=colors_pie, line=dict(color='white', width=2)),
-                textinfo='label+value',
-                textfont=dict(family='Rajdhani', size=12),
-                hovertemplate="<b>%{label}</b><br>Cantidad: %{value}<br>%{percent}<extra></extra>",
-            ))
-            fig_pie.add_annotation(
-                text=f"<b>{len(df_mp)}</b><br>movimientos",
-                x=0.5, y=0.5, font_size=16, showarrow=False,
-                font=dict(family='Bebas Neue', color='#111827'),
-            )
-            fig_pie.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0, r=0, t=10, b=10),
-                showlegend=True, legend=dict(font=dict(family='Rajdhani', size=12), orientation='v'),
-                height=320,
-            )
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-            st.markdown("""
-            <div class='info-box'>
-            <b>🔴 Transferencia</b>: pago acordado entre clubes &nbsp;·&nbsp;
-            <b>🟠 Cesión con Coste</b>: préstamo con fee &nbsp;·&nbsp;
-            <b>⚫ Libre</b>: jugador sin contrato &nbsp;·&nbsp;
-            <b>🔵 Cesión</b>: préstamo sin coste &nbsp;·&nbsp;
-            <b>🟣 Fin de Cesión</b>: regreso de préstamo
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col_bar:
-            st.markdown("<div class='section-title' style='font-size:20px;'>⚖️ BALANCE FINANCIERO POR TIPO</div>", unsafe_allow_html=True)
-
-            df_vals = df_mp[df_mp['valor_mill'] > 0].copy()
-            df_altas_v = df_vals[df_vals['tipo'] == 'Alta'].groupby('categoria')['valor_mill'].sum().reset_index()
-            df_bajas_v = df_vals[df_vals['tipo'] == 'Baja'].groupby('categoria')['valor_mill'].sum().reset_index()
-
-            if not df_altas_v.empty or not df_bajas_v.empty:
-                fig_bal = go.Figure()
-                if not df_altas_v.empty:
-                    fig_bal.add_trace(go.Bar(
-                        name='Inversión (Altas)', x=df_altas_v['categoria'], y=df_altas_v['valor_mill'],
-                        marker_color='#22C55E',
-                        text=[f"€{v:.2f}M" for v in df_altas_v['valor_mill']],
-                        textposition='outside', textfont=dict(family='Rajdhani', size=12),
-                        hovertemplate="<b>%{x}</b><br>Gasto: €%{y:.2f}M<extra></extra>",
-                    ))
-                if not df_bajas_v.empty:
-                    fig_bal.add_trace(go.Bar(
-                        name='Ingresos (Bajas)', x=df_bajas_v['categoria'], y=df_bajas_v['valor_mill'],
-                        marker_color='#D0021B',
-                        text=[f"€{v:.2f}M" for v in df_bajas_v['valor_mill']],
-                        textposition='outside', textfont=dict(family='Rajdhani', size=12),
-                        hovertemplate="<b>%{x}</b><br>Ingreso: €%{y:.2f}M<extra></extra>",
-                    ))
-                apply_plotly_style(fig_bal, yaxis_title="Millones de €")
-                fig_bal.update_layout(barmode='group', height=320, xaxis=dict(tickangle=-15))
-                st.plotly_chart(fig_bal, use_container_width=True)
-            else:
-                st.info("No hay movimientos con valor económico en esta temporada.")
-
-        st.markdown("<div class='section-title' style='font-size:20px;'>📋 RESUMEN ECONÓMICO DE LA TEMPORADA</div>", unsafe_allow_html=True)
-        resumen_data = {
-            'Indicador': [
-                '💸 Inversión en incorporaciones',
-                '💰 Ingresos por ventas/cesiones',
-                '📊 Balance neto del mercado',
-                '🟢 Total de incorporaciones',
-                '🔴 Total de salidas',
-                '🔄 Transferencias directas (entrada)',
-                '🔄 Transferencias directas (salida)',
-                '🔵 Cesiones recibidas',
-                '🔵 Cesiones cedidas',
-                '⚫ Altas sin coste (libre / fin cesión)',
-                '⚫ Bajas sin coste (libre / fin cesión)',
-            ],
-            'Valor': [
-                f"€{gastos:.2f} millones",
-                f"€{ingresos:.2f} millones",
-                f"€{balance:+.2f} millones {'✅ Superávit' if balance >= 0 else '❌ Déficit'}",
-                str(n_altas),
-                str(n_bajas),
-                str(len(altas[altas['categoria'] == 'Transferencia'])),
-                str(len(bajas[bajas['categoria'] == 'Transferencia'])),
-                str(len(altas[altas['categoria'].isin(['Cesión', 'Cesión con Coste'])])),
-                str(len(bajas[bajas['categoria'].isin(['Cesión', 'Cesión con Coste'])])),
-                str(len(altas[altas['categoria'].isin(['Libre', 'Fin de Cesión', 'Libre / Fin de Préstamo'])])),
-                str(len(bajas[bajas['categoria'].isin(['Libre', 'Fin de Cesión', 'Libre / Fin de Préstamo'])])),
-            ]
-        }
-        st.dataframe(pd.DataFrame(resumen_data), hide_index=True, use_container_width=True)
-
-    # ── TAB 2: ALTAS
-    with tab_altas_t:
-        st.markdown(f"<div class='section-title'>🟢 INCORPORACIONES · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='info-box'>Todos los jugadores que llegaron al club en esta temporada. Ordenados por valor de operación y tipo.</div>", unsafe_allow_html=True)
-
-        altas_transfer = altas[altas['valor_mill'] > 0].sort_values('valor_mill', ascending=False)
-        if not altas_transfer.empty:
-            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>💸 MAYORES INVERSIONES DE LA TEMPORADA</div>", unsafe_allow_html=True)
-            fig_altas = go.Figure(go.Bar(
-                x=altas_transfer['valor_mill'],
-                y=altas_transfer['nombre'],
-                orientation='h',
-                marker=dict(
-                    color=altas_transfer['valor_mill'],
-                    colorscale=[[0, '#86EFAC'], [1, '#15803D']],
-                    line=dict(width=0),
-                ),
-                text=[f"  €{v:.2f}M  ·  {c}" for v, c in zip(altas_transfer['valor_mill'], altas_transfer['club'])],
-                textposition='outside',
-                textfont=dict(family='Rajdhani', size=12, color='#1F2937'),
-                hovertemplate="<b>%{y}</b><br>Coste: €%{x:.2f}M<br>Club origen: %{customdata}<extra></extra>",
-                customdata=altas_transfer['club'],
-            ))
-            apply_plotly_style(fig_altas, xaxis_title="Millones de €", yaxis_title="")
-            fig_altas.update_layout(height=max(280, len(altas_transfer) * 42),
-                yaxis=dict(categoryorder='total ascending'))
-            st.plotly_chart(fig_altas, use_container_width=True)
-
-        st.markdown("<div class='section-title' style='font-size:18px;'>📋 LISTADO COMPLETO DE ALTAS</div>", unsafe_allow_html=True)
-
-        orden_cat = ['Transferencia', 'Cesión con Coste', 'Libre', 'Cesión', 'Fin de Cesión', 'Libre / Fin de Préstamo', 'Otro']
-        df_altas_display = altas[['nombre', 'categoria', 'coste', 'club']].copy()
-        df_altas_display['_orden'] = df_altas_display['categoria'].apply(
-            lambda x: orden_cat.index(x) if x in orden_cat else 99)
-        df_altas_display = df_altas_display.sort_values('_orden').drop('_orden', axis=1).reset_index(drop=True)
-        df_altas_display.index = df_altas_display.index + 1
-        df_altas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Coste', 'Club de Procedencia']
-        st.dataframe(df_altas_display, hide_index=False, use_container_width=True, height=460)
-
-    # ── TAB 3: BAJAS
-    with tab_bajas_t:
-        st.markdown(f"<div class='section-title'>🔴 SALIDAS · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
-        st.markdown("<div class='info-box'>Todos los jugadores que dejaron el club, con su destino y el ingreso generado para River Plate.</div>", unsafe_allow_html=True)
-
-        bajas_transfer = bajas[bajas['valor_mill'] > 0].sort_values('valor_mill', ascending=False)
-        if not bajas_transfer.empty:
-            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>💰 MAYORES INGRESOS POR VENTAS</div>", unsafe_allow_html=True)
-            fig_bajas = go.Figure(go.Bar(
-                x=bajas_transfer['valor_mill'],
-                y=bajas_transfer['nombre'],
-                orientation='h',
-                marker=dict(
-                    color=bajas_transfer['valor_mill'],
-                    colorscale=[[0, '#FCA5A5'], [1, '#B91C1C']],
-                    line=dict(width=0),
-                ),
-                text=[f"  €{v:.2f}M  ·  {c}" for v, c in zip(bajas_transfer['valor_mill'], bajas_transfer['club'])],
-                textposition='outside',
-                textfont=dict(family='Rajdhani', size=12, color='#1F2937'),
-                hovertemplate="<b>%{y}</b><br>Ingreso: €%{x:.2f}M<br>Club destino: %{customdata}<extra></extra>",
-                customdata=bajas_transfer['club'],
-            ))
-            apply_plotly_style(fig_bajas, xaxis_title="Millones de €", yaxis_title="")
-            fig_bajas.update_layout(height=max(280, len(bajas_transfer) * 42),
-                yaxis=dict(categoryorder='total ascending'))
-            st.plotly_chart(fig_bajas, use_container_width=True)
-
-        st.markdown("<div class='section-title' style='font-size:18px;'>📋 LISTADO COMPLETO DE BAJAS</div>", unsafe_allow_html=True)
-
-        orden_cat = ['Transferencia', 'Cesión con Coste', 'Libre', 'Cesión', 'Fin de Cesión', 'Libre / Fin de Préstamo', 'Otro']
-        df_bajas_display = bajas[['nombre', 'categoria', 'coste', 'club']].copy()
-        df_bajas_display['_orden'] = df_bajas_display['categoria'].apply(
-            lambda x: orden_cat.index(x) if x in orden_cat else 99)
-        df_bajas_display = df_bajas_display.sort_values('_orden').drop('_orden', axis=1).reset_index(drop=True)
-        df_bajas_display.index = df_bajas_display.index + 1
-        df_bajas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Ingreso', 'Club de Destino']
-        st.dataframe(df_bajas_display, hide_index=False, use_container_width=True, height=460)
-
-    # ── TAB 4: HISTÓRICO (ORDENADO CRONOLÓGICAMENTE)
-    with tab_historico:
-        st.markdown("<div class='section-title'>📈 EVOLUCIÓN HISTÓRICA DEL MERCADO</div>", unsafe_allow_html=True)
-        st.markdown("<div class='info-box'>Comparativa de todas las temporadas: inversiones, ingresos y balance neto. Los valores reflejan sólo operaciones con coste económico declarado.</div>", unsafe_allow_html=True)
-
-        # ✅ ORDENAMIENTO POR AÑO CALENDARIO 
-        temporadas_ordenadas = sorted(df_mp_full['Temporada'].unique(), key=lambda x: int(x))
-        
-        resumen_historico = []
-        for temp in temporadas_ordenadas:
-            df_t = df_mp_full[df_mp_full['Temporada'] == temp]
-            resumen_historico.append({
-                'Temporada': temp,
-                'Altas': len(df_t[df_t['tipo'] == 'Alta']),
-                'Bajas': len(df_t[df_t['tipo'] == 'Baja']),
-                'Inversión (M€)': round(df_t[df_t['tipo'] == 'Alta']['valor_mill'].sum(), 2),
-                'Ingresos (M€)':  round(df_t[df_t['tipo'] == 'Baja']['valor_mill'].sum(), 2),
-            })
-        df_hist = pd.DataFrame(resumen_historico)
-        df_hist['Balance (M€)'] = (df_hist['Ingresos (M€)'] - df_hist['Inversión (M€)']).round(2)
-
-        c_izq, c_der = st.columns(2)
-
-        with c_izq:
-            fig_lines = go.Figure()
-            fig_lines.add_trace(go.Scatter(
-                x=df_hist['Temporada'], y=df_hist['Inversión (M€)'],
-                mode='lines+markers+text', name='Inversión (Altas)',
-                line=dict(color='#22C55E', width=3), marker=dict(size=10, color='#22C55E'),
-                text=[f"€{v:.1f}M" for v in df_hist['Inversión (M€)']],
-                textposition='top center', textfont=dict(family='Rajdhani', size=11),
-                hovertemplate="<b>%{x}</b><br>Inversión: €%{y:.2f}M<extra></extra>",
-            ))
-            fig_lines.add_trace(go.Scatter(
-                x=df_hist['Temporada'], y=df_hist['Ingresos (M€)'],
-                mode='lines+markers+text', name='Ingresos (Bajas)',
-                line=dict(color='#D0021B', width=3), marker=dict(size=10, color='#D0021B'),
-                text=[f"€{v:.1f}M" for v in df_hist['Ingresos (M€)']],
-                textposition='bottom center', textfont=dict(family='Rajdhani', size=11),
-                hovertemplate="<b>%{x}</b><br>Ingresos: €%{y:.2f}M<extra></extra>",
-            ))
-            apply_plotly_style(fig_lines, title='INVERSIÓN VS INGRESOS',
-                               xaxis_title='Temporada', yaxis_title='Millones de €')
-            fig_lines.update_layout(height=380,
-                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
-            st.plotly_chart(fig_lines, use_container_width=True)
-
-        with c_der:
-            colores_balance = ['#22C55E' if b >= 0 else '#D0021B' for b in df_hist['Balance (M€)']]
-            fig_balance = go.Figure(go.Bar(
-                x=df_hist['Temporada'], y=df_hist['Balance (M€)'],
-                marker_color=colores_balance,
-                text=[f"€{b:+.1f}M" for b in df_hist['Balance (M€)']],
-                textposition='outside',
-                textfont=dict(family='Bebas Neue', size=16),
-                hovertemplate="<b>%{x}</b><br>Balance: €%{y:+.2f}M<extra></extra>",
-            ))
-            fig_balance.add_hline(y=0, line_color='#374151', line_width=1.5)
-            apply_plotly_style(fig_balance, title='BALANCE NETO POR TEMPORADA',
-                               xaxis_title='Temporada', yaxis_title='Millones de €')
-            fig_balance.update_layout(height=380)
-            st.plotly_chart(fig_balance, use_container_width=True)
-
-        st.markdown("<div class='section-title' style='font-size:18px;'>🔄 VOLUMEN DE MOVIMIENTOS POR TEMPORADA</div>", unsafe_allow_html=True)
-        fig_mov = go.Figure()
-        fig_mov.add_trace(go.Bar(
-            name='Incorporaciones', x=df_hist['Temporada'], y=df_hist['Altas'],
-            marker_color='#22C55E',
-            text=df_hist['Altas'], textposition='inside',
-            textfont=dict(family='Bebas Neue', size=18, color='white'),
-        ))
-        fig_mov.add_trace(go.Bar(
-            name='Salidas', x=df_hist['Temporada'], y=df_hist['Bajas'],
-            marker_color='#D0021B',
-            text=df_hist['Bajas'], textposition='inside',
-            textfont=dict(family='Bebas Neue', size=18, color='white'),
-        ))
-        apply_plotly_style(fig_mov, xaxis_title='Temporada', yaxis_title='Cantidad de Jugadores')
-        fig_mov.update_layout(barmode='group', height=300,
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
-        st.plotly_chart(fig_mov, use_container_width=True)
-
-        st.markdown("<div class='section-title' style='font-size:18px;'>📋 TABLA HISTÓRICA COMPLETA</div>", unsafe_allow_html=True)
-        df_hist_display = df_hist.copy()
-        df_hist_display['Inversión (M€)'] = df_hist_display['Inversión (M€)'].apply(lambda x: f"€{x:.2f}M")
-        df_hist_display['Ingresos (M€)']  = df_hist_display['Ingresos (M€)'].apply(lambda x: f"€{x:.2f}M")
-        df_hist_display['Balance (M€)']   = df_hist_display['Balance (M€)'].apply(lambda x: f"€{x:+.2f}M")
-        st.dataframe(df_hist_display, hide_index=True, use_container_width=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        c_top1, c_top2 = st.columns(2)
-        with c_top1:
-            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>🏆 TOP 10 VENTAS HISTÓRICAS</div>", unsafe_allow_html=True)
-            top_ventas = df_mp_full[df_mp_full['tipo'] == 'Baja'].nlargest(10, 'valor_mill')[
-                ['nombre', 'Temporada', 'valor_mill', 'club']].reset_index(drop=True)
-            top_ventas.index = top_ventas.index + 1
-            top_ventas.columns = ['Jugador', 'Temporada', 'Valor (M€)', 'Club Destino']
-            top_ventas['Valor (M€)'] = top_ventas['Valor (M€)'].apply(lambda x: f"€{x:.2f}M")
-            st.dataframe(top_ventas, hide_index=False, use_container_width=True)
-
-        with c_top2:
-            st.markdown("<div class='section-title' style='font-size:18px;'>💸 TOP 10 INVERSIONES HISTÓRICAS</div>", unsafe_allow_html=True)
-            top_compras = df_mp_full[df_mp_full['tipo'] == 'Alta'].nlargest(10, 'valor_mill')[
-                ['nombre', 'Temporada', 'valor_mill', 'club']].reset_index(drop=True)
-            top_compras.index = top_compras.index + 1
-            top_compras.columns = ['Jugador', 'Temporada', 'Valor (M€)', 'Club Origen']
-            top_compras['Valor (M€)'] = top_compras['Valor (M€)'].apply(lambda x: f"€{x:.2f}M")
-            st.dataframe(top_compras, hide_index=False, use_container_width=True)
 
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
 elif menu == "Historial":
@@ -1240,7 +817,6 @@ elif menu == "Estadísticas de Equipo":
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
 
-    # ✅ AHORA SÍ USA LA FUNCIÓN INTEGRADA
     df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
     
     if not df_equipo.empty:
