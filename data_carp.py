@@ -670,7 +670,7 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Resumen General", "Mercado de Pases", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
+        menu = st.radio("", ["Resumen General", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
@@ -827,82 +827,7 @@ if menu == "Resumen General":
             height=500,
         )
 
-# ─── MERCADO DE PASES ──────────────────────────────────────────────────────────
-# ─── MERCADO DE PASES ──────────────────────────────────────────────────────────
-elif menu == "Mercado de Pases":
-    page_header("🤝", "MERCADO DE PASES", f"Altas y Bajas · Temporada {temporada_sel}")
-    
-    ruta_mercado = CARPETA / "Mercado_de_Pases_River.xlsx"
-    
-    if not ruta_mercado.exists():
-        st.warning("No se encontró el archivo 'Mercado_de_Pases_River.xlsx' en tu carpeta. Ejecutá el scraper de mercados para crearlo.")
-    else:
-        try:
-            df_mercado = pd.read_excel(ruta_mercado, sheet_name=str(temporada_sel))
-            
-            periodo_sel = st.radio("Ventana de Transferencias:", ["Todo el Año", "Inicio de Temporada", "Mitad de Temporada"], horizontal=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            if periodo_sel != "Todo el Año":
-                df_mercado = df_mercado[df_mercado['periodo'] == periodo_sel]
-            
-            df_altas = df_mercado[df_mercado['alta o baja'] == 'Alta'].copy()
-            df_bajas = df_mercado[df_mercado['alta o baja'] == 'Baja'].copy()
-            
-            # --- MOTOR HTML ESTILO FOOTBALL MANAGER ---
-            def generar_tabla_fm(df, tipo):
-                if df.empty:
-                    return "<div style='padding: 20px; text-align: center; color: #6B7280; font-family: Inter; border: 1px dashed #E5E7EB; border-radius: 8px;'>No hay registros en este periodo.</div>"
-                
-                # Rojo si compramos (gasto), Verde si vendemos (ingreso)
-                color_coste = "#D0021B" if tipo == "Alta" else "#22C55E" 
-                
-                html = f"""
-                <style>
-                .fm-table-{tipo} {{ width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }}
-                .fm-table-{tipo} th {{ background-color: #111827; color: #9CA3AF; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; padding: 12px 16px; text-align: left; font-weight: 600; }}
-                .fm-table-{tipo} th.right {{ text-align: right; }}
-                .fm-table-{tipo} td {{ padding: 12px 16px; border-bottom: 1px solid #F3F4F6; color: #1F2937; background-color: #FFFFFF; transition: background-color 0.2s; }}
-                .fm-table-{tipo} tr:last-child td {{ border-bottom: none; }}
-                .fm-table-{tipo} tr:hover td {{ background-color: #F9FAFB; }}
-                .fm-player {{ font-weight: 600; color: #111827; font-size: 14px; }}
-                .fm-club {{ color: #4B5563; font-size: 12px; margin-top: 2px; }}
-                .fm-cost {{ font-family: 'Rajdhani', sans-serif; font-weight: 700; text-align: right; color: {color_coste}; font-size: 14px; letter-spacing: 0.5px; }}
-                </style>
-                <table class="fm-table-{tipo}">
-                    <thead>
-                        <tr>
-                            <th>Jugador</th>
-                            <th>{ "Procedencia" if tipo == "Alta" else "Destino" }</th>
-                            <th class="right">Condición / Coste</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                """
-                for _, row in df.iterrows():
-                    html += f"""
-                        <tr>
-                            <td><div class="fm-player">{row['nombre']}</div></td>
-                            <td><div class="fm-club">{row['club final']}</div></td>
-                            <td class="right"><div class="fm-cost">{row['coste']}</div></td>
-                        </tr>
-                    """
-                html += "</tbody></table>"
-                return html
 
-            # --- DIBUJADO DE LAS COLUMNAS ---
-            c_altas, c_bajas = st.columns(2)
-            
-            with c_altas:
-                st.markdown("<div class='section-title' style='color:#22C55E; font-size: 22px;'>🟢 ALTAS (LLEGADAS)</div>", unsafe_allow_html=True)
-                st.markdown(generar_tabla_fm(df_altas, "Alta"), unsafe_allow_html=True)
-                
-            with c_bajas:
-                st.markdown("<div class='section-title' style='color:#EF4444; font-size: 22px;'>🔴 BAJAS (SALIDAS)</div>", unsafe_allow_html=True)
-                st.markdown(generar_tabla_fm(df_bajas, "Baja"), unsafe_allow_html=True)
-                
-        except ValueError:
-            st.info(f"No hay datos de mercado registrados para la temporada {temporada_sel}.")
 
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
 elif menu == "Historial":
