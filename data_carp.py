@@ -57,10 +57,15 @@ def cargar_datos_completos(ruta_excel):
         for hoja in xl.sheet_names:
             if hoja in hojas_omitir: continue
             df = pd.read_excel(ruta_excel, sheet_name=hoja)
-            df.columns = df.columns.str.strip()
+            
+            # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos las columnas a texto antes de limpiar
+            df.columns = df.columns.astype(str).str.strip()
             
             if 'Jugador' in df.columns and 'Nota SofaScore' in df.columns:
-                df['Jugador'] = df['Jugador'].str.strip()
+                
+                # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos la columna Jugador a texto antes de limpiar
+                df['Jugador'] = df['Jugador'].astype(str).str.strip()
+                
                 df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
                 df = df.dropna(subset=['Jugador', 'Nota SofaScore'])
                 df = df[(df['Jugador'] != "") & (df['Nota SofaScore'] > 0)]
@@ -79,6 +84,23 @@ def cargar_datos_completos(ruta_excel):
         return pd.concat(partes, ignore_index=True) if partes else pd.DataFrame(), "OK"
     except Exception as e:
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
+
+@st.cache_data
+def cargar_todas_las_temporadas():
+    """Carga y agrega datos de todas las temporadas disponibles"""
+    todos_datos = []
+    for anio, ruta in temporadas_dict.items():
+        df, estado = cargar_datos_completos(ruta)
+        if estado == "OK" and not df.empty:
+            df['Temporada'] = anio
+            todos_datos.append(df)
+    
+    if todos_datos:
+        df_completo = pd.concat(todos_datos, ignore_index=True)
+        if 'Efectividad Pases' in df_completo.columns:
+            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
+        return df_completo
+    return pd.DataFrame()
 
 @st.cache_data
 def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
@@ -163,7 +185,6 @@ if not anios_disponibles:
     st.sidebar.error("❌ No se encontraron archivos de Base de Datos.")
     st.stop()
 
-# Selector de Temporada
 temporada_sel = st.sidebar.selectbox("🗓️ Seleccioná la Temporada:", anios_disponibles)
 EXCEL_ACTUAL = temporadas_dict[temporada_sel]
 
@@ -370,14 +391,13 @@ elif menu == "Mapa de Tiros":
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =============================================================================
-# 9. HERRAMIENTAS: CARA A CARA (P90 TOTAL)
+# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO P90)
 # =============================================================================
 
 elif menu == "Cara a Cara":
     st.markdown("<h1>⚔️ Comparación Cara a Cara</h1>", unsafe_allow_html=True)
-    st.markdown("Compará el rendimiento de dos jugadores de distintas temporadas (Estadísticas por cada 90 minutos)")
+    st.markdown("Compará el rendimiento de dos jugadores de distintas temporadas (Estadísticas P90)")
     
-    # Cargar datos de todas las temporadas para los selectores
     @st.cache_data
     def cargar_datos_para_comparacion():
         todos_datos = []
@@ -457,7 +477,6 @@ elif menu == "Cara a Cara":
         if s_a and s_b:
             st.markdown("---")
             
-            # Métricas generales comparativas
             st.subheader("📊 Comparación de Estadísticas Generales")
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             
@@ -512,7 +531,7 @@ elif menu == "Cara a Cara":
                 
                 # FILTRO ANTI-ANOMALÍAS: Exigimos al menos 180 mins para las escalas P90
                 tg_p90 = tg[tg['Minutos'] >= 180]
-                if tg_p90.empty: tg_p90 = tg # Fallback por si la base recién empieza
+                if tg_p90.empty: tg_p90 = tg 
                 
                 return [
                     ((tg_p90['Goles']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
