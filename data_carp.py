@@ -21,7 +21,6 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-/* === VARIABLES DE COLOR === */
 :root {
     --red-primary:   #D0021B;
     --red-hover:     #A80016;
@@ -45,361 +44,119 @@ st.markdown("""
     --radius-lg:     16px;
 }
 
-/* === RESET & BASE === */
-html, body, [class*="css"] { 
-    font-family: 'Inter', sans-serif !important;
-}
-.main .block-container { 
-    padding: 1.5rem 2rem 3rem 2rem !important; 
-    max-width: 1400px;
-}
+html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+.main .block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1400px; }
 
-/* === SIDEBAR === */
-[data-testid="stSidebar"] {
-    background: var(--black) !important;
-    border-right: 3px solid var(--red-primary) !important;
-}
-[data-testid="stSidebar"] * {
-    color: var(--gray-200) !important;
-}
+[data-testid="stSidebar"] { background: var(--black) !important; border-right: 3px solid var(--red-primary) !important; }
+[data-testid="stSidebar"] * { color: var(--gray-200) !important; }
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stRadio label {
-    color: var(--gray-400) !important;
-    font-size: 11px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1.5px !important;
-    font-weight: 600 !important;
-    font-family: 'Rajdhani', sans-serif !important;
+    color: var(--gray-400) !important; font-size: 11px !important;
+    text-transform: uppercase !important; letter-spacing: 1.5px !important;
+    font-weight: 600 !important; font-family: 'Rajdhani', sans-serif !important;
 }
 [data-testid="stSidebar"] .stRadio div[role="radio"] p {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 15px !important;
-    color: var(--gray-200) !important;
+    font-family: 'Rajdhani', sans-serif !important; font-weight: 600 !important;
+    font-size: 15px !important; color: var(--gray-200) !important;
 }
 [data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
-    background: #1a1a1a !important;
-    border: 1px solid #333 !important;
-    color: var(--white) !important;
-    border-radius: var(--radius-sm) !important;
+    background: #1a1a1a !important; border: 1px solid #333 !important;
+    color: var(--white) !important; border-radius: var(--radius-sm) !important;
 }
-[data-testid="stSidebar"] hr {
-    border-color: #2a2a2a !important;
-    margin: 1rem 0 !important;
-}
+[data-testid="stSidebar"] hr { border-color: #2a2a2a !important; margin: 1rem 0 !important; }
 
-/* === ENCABEZADO SIDEBAR === */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 4px 0 16px 0;
-}
-.sidebar-brand-text .title {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 32px;
-    color: var(--white) !important;
-    line-height: 1;
-    letter-spacing: 2px;
-}
-.sidebar-brand-text .subtitle {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
-    color: var(--red-primary) !important;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    font-weight: 700;
-}
-
-/* === SECCIÓN LABELS SIDEBAR === */
 .sidebar-section-label {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 10px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: #555 !important;
-    font-weight: 700 !important;
-    margin-bottom: 6px !important;
-    margin-top: 8px !important;
+    font-family: 'Rajdhani', sans-serif !important; font-size: 10px !important;
+    text-transform: uppercase !important; letter-spacing: 2px !important;
+    color: #555 !important; font-weight: 700 !important;
+    margin-bottom: 6px !important; margin-top: 8px !important;
 }
 
-/* === TÍTULOS PRINCIPALES === */
-h1.page-title {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 48px !important;
-    color: var(--gray-900) !important;
-    letter-spacing: 3px !important;
-    margin: 0 0 4px 0 !important;
-    line-height: 1 !important;
-}
-.page-subtitle {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 600;
-    margin-bottom: 24px;
-}
 .section-title {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 26px !important;
-    color: var(--gray-800) !important;
-    letter-spacing: 2px !important;
+    font-family: 'Bebas Neue', cursive !important; font-size: 26px !important;
+    color: var(--gray-800) !important; letter-spacing: 2px !important;
     margin: 0 0 12px 0 !important;
 }
-.section-title-red {
-    color: var(--red-primary) !important;
-}
+.section-title-red { color: var(--red-primary) !important; }
 
-/* === DIVISOR ROJO === */
 .red-divider {
-    height: 3px;
-    background: linear-gradient(90deg, var(--red-primary), transparent);
-    border: none;
-    margin: 8px 0 24px 0;
-    border-radius: 2px;
+    height: 3px; background: linear-gradient(90deg, var(--red-primary), transparent);
+    border: none; margin: 8px 0 24px 0; border-radius: 2px;
 }
 
-/* === SCORE BOX === */
 .score-card {
     background: linear-gradient(135deg, var(--black) 0%, #1a1a1a 100%);
-    border: 1px solid #2a2a2a;
-    border-left: 4px solid var(--red-primary);
-    border-radius: var(--radius-md);
-    padding: 20px 28px;
-    text-align: center;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    overflow: hidden;
+    border: 1px solid #2a2a2a; border-left: 4px solid var(--red-primary);
+    border-radius: var(--radius-md); padding: 20px 28px; text-align: center;
+    margin-bottom: 24px; box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
 }
 .score-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
     background: linear-gradient(90deg, var(--red-primary), transparent);
 }
-.score-card .label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-.score-card .score {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 52px;
-    color: var(--white);
-    line-height: 1;
-    letter-spacing: 4px;
-}
-.score-card .score .goals {
-    color: var(--red-primary);
-}
+.score-card .label { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--gray-400);
+    text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 8px; }
+.score-card .score { font-family: 'Bebas Neue', cursive; font-size: 52px; color: var(--white);
+    line-height: 1; letter-spacing: 4px; }
+.score-card .score .goals { color: var(--red-primary); }
 
-/* === METRIC CARDS === */
-.metric-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 24px;
-}
-.metric-card {
-    background: var(--white);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius-md);
-    padding: 16px;
-    text-align: center;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow 0.2s;
-}
-.metric-card:hover { box-shadow: var(--shadow-md); }
-.metric-card .metric-value {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 36px;
-    color: var(--red-primary);
-    line-height: 1;
-}
-.metric-card .metric-label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-    margin-top: 4px;
-}
-
-/* === DATAFRAMES === */
-[data-testid="stDataFrame"] {
-    border-radius: var(--radius-md) !important;
-    overflow: hidden !important;
-    border: 1px solid var(--gray-200) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
+[data-testid="stDataFrame"] { border-radius: var(--radius-md) !important; overflow: hidden !important;
+    border: 1px solid var(--gray-200) !important; box-shadow: var(--shadow-sm) !important; }
 [data-testid="stDataFrame"] table thead tr th {
-    background: var(--black) !important;
-    color: var(--white) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    font-weight: 700 !important;
-    padding: 10px 16px !important;
+    background: var(--black) !important; color: var(--white) !important;
+    font-family: 'Rajdhani', sans-serif !important; font-size: 12px !important;
+    text-transform: uppercase !important; letter-spacing: 1px !important;
+    font-weight: 700 !important; padding: 10px 16px !important;
 }
-[data-testid="stDataFrame"] table tbody tr:nth-child(even) td {
-    background: var(--gray-50) !important;
-}
-[data-testid="stDataFrame"] table tbody tr:hover td {
-    background: var(--red-light) !important;
-}
+[data-testid="stDataFrame"] table tbody tr:nth-child(even) td { background: var(--gray-50) !important; }
+[data-testid="stDataFrame"] table tbody tr:hover td { background: var(--red-light) !important; }
 [data-testid="stDataFrame"] table tbody tr td {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 14px !important;
-    padding: 9px 16px !important;
-    color: var(--gray-800) !important;
+    font-family: 'Inter', sans-serif !important; font-size: 14px !important;
+    padding: 9px 16px !important; color: var(--gray-800) !important;
     border-bottom: 1px solid var(--gray-100) !important;
 }
 
-/* === SELECTBOXES & CONTROLS === */
-[data-testid="stSelectbox"] > div > div,
-[data-testid="stMultiSelect"] > div > div {
-    border-radius: var(--radius-sm) !important;
-    border-color: var(--gray-200) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSlider"] .stSlider > div { 
-    accent-color: var(--red-primary) !important;
-}
-.stSlider [data-testid="stThumbValue"] {
-    color: var(--red-primary) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-}
+[data-testid="stMetric"] { background: var(--white) !important; border: 1px solid var(--gray-200) !important;
+    border-radius: var(--radius-md) !important; padding: 16px !important; box-shadow: var(--shadow-sm) !important; }
+[data-testid="stMetricValue"] { font-family: 'Bebas Neue', cursive !important; font-size: 32px !important; color: var(--red-primary) !important; }
+[data-testid="stMetricLabel"] { font-family: 'Rajdhani', sans-serif !important; text-transform: uppercase !important;
+    letter-spacing: 1px !important; font-size: 11px !important; font-weight: 700 !important; color: var(--gray-400) !important; }
+[data-testid="stMetricDelta"] { font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; }
 
-/* === MÉTRICAS NATIVAS DE STREAMLIT === */
-[data-testid="stMetric"] {
-    background: var(--white) !important;
-    border: 1px solid var(--gray-200) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 16px !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 32px !important;
-    color: var(--red-primary) !important;
-}
-[data-testid="stMetricLabel"] {
-    font-family: 'Rajdhani', sans-serif !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: var(--gray-400) !important;
-}
-[data-testid="stMetricDelta"] {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-}
-
-/* === INFO BOXES === */
 .info-box {
-    background: var(--red-light);
-    border-left: 3px solid var(--red-primary);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 10px 16px;
-    margin-bottom: 16px;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    color: var(--gray-600);
-    font-weight: 500;
+    background: var(--red-light); border-left: 3px solid var(--red-primary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 10px 16px;
+    margin-bottom: 16px; font-family: 'Rajdhani', sans-serif; font-size: 13px;
+    color: var(--gray-600); font-weight: 500;
 }
 
-/* === HEADER BARRA === */
-.page-header {
-    display: flex;
-    align-items: flex-end;
-    gap: 16px;
-    margin-bottom: 4px;
-}
-.page-header-icon {
-    font-size: 40px;
-    line-height: 1;
-    margin-bottom: 4px;
-}
-
-/* === TABS === */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    border-bottom: 2px solid var(--gray-200) !important;
-}
+.stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid var(--gray-200) !important; }
 .stTabs [data-baseweb="tab"] {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 14px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    color: var(--gray-400) !important;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+    font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important;
+    font-size: 14px !important; text-transform: uppercase !important; letter-spacing: 1px !important;
+    color: var(--gray-400) !important; border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
     padding: 10px 20px !important;
 }
 .stTabs [aria-selected="true"] {
-    color: var(--red-primary) !important;
-    border-bottom: 3px solid var(--red-primary) !important;
+    color: var(--red-primary) !important; border-bottom: 3px solid var(--red-primary) !important;
     background: var(--red-light) !important;
 }
 
-/* === RADIO BUTTONS SIDEBAR === */
-[data-testid="stSidebar"] .stRadio > div {
-    gap: 2px !important;
-}
-[data-testid="stSidebar"] .stRadio > div > label {
-    border-radius: var(--radius-sm) !important;
-    padding: 8px 12px !important;
-    transition: background 0.15s !important;
-}
-[data-testid="stSidebar"] .stRadio > div > label:hover {
-    background: rgba(208,2,27,0.12) !important;
-}
-
-/* === PLOTLY CHARTS === */
-.js-plotly-plot .plotly .modebar {
-    background: transparent !important;
-}
-
-/* === COMPARADOR === */
-.player-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-    font-family: 'Bebas Neue', cursive;
-    font-size: 22px;
-    letter-spacing: 2px;
-}
+.player-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+    border-radius: var(--radius-md); margin-bottom: 16px; font-family: 'Bebas Neue', cursive;
+    font-size: 22px; letter-spacing: 2px; }
 .player-header-red  { background: linear-gradient(135deg, var(--red-primary), #ff2d3a); color: white; }
 .player-header-gray { background: linear-gradient(135deg, #374151, #6b7280); color: white; }
 
-/* === FOOTER === */
-.footer {
-    text-align: center;
-    padding: 24px 0 8px 0;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
-    color: var(--gray-400);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-top: 1px solid var(--gray-200);
-    margin-top: 48px;
-}
+.footer { text-align: center; padding: 24px 0 8px 0; font-family: 'Rajdhani', sans-serif;
+    font-size: 12px; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase;
+    border-top: 1px solid var(--gray-200); margin-top: 48px; }
+
+/* Badge de tipo de movimiento */
+.badge-transfer { color: #15803D; font-weight: 700; }
+.badge-loan     { color: #1D4ED8; font-weight: 700; }
+.badge-free     { color: #374151; font-weight: 700; }
+.badge-return   { color: #7C3AED; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -418,43 +175,24 @@ PLOTLY_LAYOUT = dict(
     margin=dict(l=16, r=16, t=40, b=16),
     title_font=dict(family="Bebas Neue, cursive", size=22, color="#1F2937"),
     legend=dict(
-        bgcolor="rgba(255,255,255,0.9)",
-        bordercolor="#E5E7EB",
-        borderwidth=1,
+        bgcolor="rgba(255,255,255,0.9)", bordercolor="#E5E7EB", borderwidth=1,
         font=dict(family="Rajdhani", size=12),
     ),
     hoverlabel=dict(
-        bgcolor="#111827",
-        bordercolor="#D0021B",
-        font_color="white",
-        font_family="Rajdhani",
-        font_size=13,
+        bgcolor="#111827", bordercolor="#D0021B", font_color="white",
+        font_family="Rajdhani", font_size=13,
     ),
 )
 
 def apply_plotly_style(fig, title="", xaxis_title="", yaxis_title=""):
-    """Aplica estilos consistentes a todos los gráficos."""
     fig.update_layout(
-        **PLOTLY_LAYOUT,
-        title=title,
-        xaxis=dict(
-            title=xaxis_title,
-            gridcolor="#E5E7EB",
-            linecolor="#E5E7EB",
-            zeroline=True,
-            zerolinecolor="#D1D5DB",
-            zerolinewidth=1,
-            title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
-        ),
-        yaxis=dict(
-            title=yaxis_title,
-            gridcolor="#E5E7EB",
-            linecolor="#E5E7EB",
-            zeroline=True,
-            zerolinecolor="#D1D5DB",
-            zerolinewidth=1,
-            title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
-        ),
+        **PLOTLY_LAYOUT, title=title,
+        xaxis=dict(title=xaxis_title, gridcolor="#E5E7EB", linecolor="#E5E7EB",
+                   zeroline=True, zerolinecolor="#D1D5DB", zerolinewidth=1,
+                   title_font=dict(family="Rajdhani", size=12, color="#6B7280")),
+        yaxis=dict(title=yaxis_title, gridcolor="#E5E7EB", linecolor="#E5E7EB",
+                   zeroline=True, zerolinecolor="#D1D5DB", zerolinewidth=1,
+                   title_font=dict(family="Rajdhani", size=12, color="#6B7280")),
     )
     return fig
 
@@ -464,6 +202,7 @@ CARPETA = Path(__file__).parent
 RUTA_LOGO_ACTUAL = CARPETA / "logo_river_actual.png"
 RUTA_LOGO_RETRO  = CARPETA / "logo_river_retro.png"
 RUTA_LOGO_CARP   = CARPETA / "logo_carp.png"
+RUTA_MERCADO     = CARPETA / "Mercado_de_Pases_River.xlsx"
 
 # ── DETECCIÓN DE TEMPORADAS ───────────────────────────────────────────────────
 archivos_disponibles = list(CARPETA.glob("Base_Datos_River_*.xlsx"))
@@ -557,40 +296,37 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
 
 @st.cache_data
 def generar_historial_rivales(ruta_excel_str, hojas):
-    """Genera la tabla de historial (W/D/L) leyendo todos los resultados de una temporada"""
     historial = {}
     for hoja in hojas:
         local, rival, g_local, g_rival = extraer_info_partido(ruta_excel_str, hoja)
-        if g_local == "?" or g_rival == "?": continue
-        
-        # Función interna para limpiar los penales y obtener los goles del partido
+        if g_local == "?" or g_rival == "?":
+            continue
+
         def clean_goals(g_str):
             m = re.match(r'^(\d+)', str(g_str).strip())
             return int(m.group(1)) if m else 0
-            
+
         gl = clean_goals(g_local)
         gv = clean_goals(g_rival)
-        
+
         if 'River' in local:
             equipo_rival = rival
-            gf = gl
-            gc = gv
+            gf, gc = gl, gv
         else:
             equipo_rival = local
-            gf = gv
-            gc = gl
-            
+            gf, gc = gv, gl
+
         if equipo_rival not in historial:
             historial[equipo_rival] = {'PJ': 0, 'PG': 0, 'PE': 0, 'PP': 0, 'GF': 0, 'GC': 0}
-            
+
         historial[equipo_rival]['PJ'] += 1
         historial[equipo_rival]['GF'] += gf
         historial[equipo_rival]['GC'] += gc
-        
-        if gf > gc: historial[equipo_rival]['PG'] += 1
+
+        if gf > gc:   historial[equipo_rival]['PG'] += 1
         elif gf < gc: historial[equipo_rival]['PP'] += 1
-        else: historial[equipo_rival]['PE'] += 1
-        
+        else:         historial[equipo_rival]['PE'] += 1
+
     df_hist = pd.DataFrame.from_dict(historial, orient='index').reset_index()
     if not df_hist.empty:
         df_hist.rename(columns={'index': 'Rival'}, inplace=True)
@@ -600,53 +336,109 @@ def generar_historial_rivales(ruta_excel_str, hojas):
 
 @st.cache_data
 def generar_historial_completo():
-    """Genera la tabla de historial combinando TODOS los archivos de TODAS las temporadas"""
     historial = {}
     for anio, ruta in temporadas_dict.items():
         try:
             xl = pd.ExcelFile(ruta)
             hojas_omitir = ["Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"]
             hojas_validas = [h for h in xl.sheet_names if h not in hojas_omitir]
-            
             for hoja in hojas_validas:
                 local, rival, g_local, g_rival = extraer_info_partido(str(ruta), hoja)
-                if g_local == "?" or g_rival == "?": continue
-                
+                if g_local == "?" or g_rival == "?":
+                    continue
+
                 def clean_goals(g_str):
                     m = re.match(r'^(\d+)', str(g_str).strip())
                     return int(m.group(1)) if m else 0
-                    
+
                 gl = clean_goals(g_local)
                 gv = clean_goals(g_rival)
-                
+
                 if 'River' in local:
                     equipo_rival = rival
-                    gf = gl
-                    gc = gv
+                    gf, gc = gl, gv
                 else:
                     equipo_rival = local
-                    gf = gv
-                    gc = gl
-                    
+                    gf, gc = gv, gl
+
                 if equipo_rival not in historial:
                     historial[equipo_rival] = {'PJ': 0, 'PG': 0, 'PE': 0, 'PP': 0, 'GF': 0, 'GC': 0}
-                    
+
                 historial[equipo_rival]['PJ'] += 1
                 historial[equipo_rival]['GF'] += gf
                 historial[equipo_rival]['GC'] += gc
-                
-                if gf > gc: historial[equipo_rival]['PG'] += 1
+
+                if gf > gc:   historial[equipo_rival]['PG'] += 1
                 elif gf < gc: historial[equipo_rival]['PP'] += 1
-                else: historial[equipo_rival]['PE'] += 1
+                else:         historial[equipo_rival]['PE'] += 1
         except Exception:
             continue
-            
+
     df_hist = pd.DataFrame.from_dict(historial, orient='index').reset_index()
     if not df_hist.empty:
         df_hist.rename(columns={'index': 'Rival'}, inplace=True)
         df_hist['DIF'] = df_hist['GF'] - df_hist['GC']
         df_hist = df_hist.sort_values(by=['PJ', 'PG', 'DIF'], ascending=[False, False, False])
     return df_hist
+
+# ── CARGA MERCADO DE PASES ────────────────────────────────────────────────────
+@st.cache_data
+def cargar_mercado_pases():
+    if not RUTA_MERCADO.exists():
+        return pd.DataFrame()
+
+    xl = pd.ExcelFile(RUTA_MERCADO)
+    todas = []
+    for hoja in xl.sheet_names:
+        try:
+            df = pd.read_excel(RUTA_MERCADO, sheet_name=hoja, header=0)
+            df.columns = ['nombre', 'tipo', 'coste', 'club', 'periodo']
+            df = df.dropna(subset=['nombre', 'tipo'])
+            df['nombre'] = df['nombre'].astype(str).str.strip()
+            df['tipo']   = df['tipo'].astype(str).str.strip()
+            df['coste']  = df['coste'].astype(str).str.strip()
+            df['club']   = df['club'].astype(str).str.strip()
+            df['Temporada'] = str(hoja)
+            todas.append(df)
+        except Exception:
+            continue
+
+    if not todas:
+        return pd.DataFrame()
+
+    df_all = pd.concat(todas, ignore_index=True)
+    df_all = df_all[df_all['tipo'].isin(['Alta', 'Baja'])]
+
+    def clasificar_movimiento(coste_str):
+        c = str(coste_str).strip()
+        if 'mill' in c.lower():
+            return 'Cesión con Coste' if 'Coste de cesión' in c else 'Transferencia'
+        if 'mil €' in c.lower():
+            return 'Transferencia'
+        if 'libre / fin' in c.lower():
+            return 'Libre / Fin de Préstamo'
+        if c.lower() in ['libre'] or 'libre' in c.lower():
+            return 'Libre'
+        if 'fin de cesión' in c.lower():
+            return 'Fin de Cesión'
+        if c.lower() in ['cesión', 'cesion'] or c.lower().startswith('cesión'):
+            return 'Cesión'
+        return 'Otro'
+
+    df_all['categoria'] = df_all['coste'].apply(clasificar_movimiento)
+
+    def extraer_valor(coste_str):
+        c = str(coste_str)
+        m = re.search(r'([\d,\.]+)\s*mill', c)
+        if m:
+            return float(m.group(1).replace(',', '.'))
+        m = re.search(r'([\d,\.]+)\s*mil\s*€', c)
+        if m:
+            return round(float(m.group(1).replace(',', '.')) / 1000, 3)
+        return 0.0
+
+    df_all['valor_mill'] = df_all['coste'].apply(extraer_valor)
+    return df_all
 
 def mostrar_marcador(ruta_excel, hoja_excel):
     local, rival, g_local, g_rival = extraer_info_partido(str(ruta_excel), hoja_excel)
@@ -702,13 +494,13 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Resumen General", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
+        # ✅ "Mercado de Pases" agregado aquí
+        menu = st.radio("", ["Resumen General", "Mercado de Pases", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
     else:
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        # 🔥 ACÁ SE AGREGÓ "Historial General" A LAS HERRAMIENTAS
         menu = st.radio("", ["Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -728,33 +520,35 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
-df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
-if estado != "OK":
-    st.error(estado)
-    st.stop()
+# Solo cargar df_raw si no estamos en Mercado de Pases
+if menu != "Mercado de Pases":
+    df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
+    if estado != "OK":
+        st.error(estado)
+        st.stop()
 
-if 'Efectividad Pases' in df_raw.columns:
-    df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
+    if 'Efectividad Pases' in df_raw.columns:
+        df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
-df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
-    Partidos=('Nota SofaScore', 'count'),
-    Promedio=('Nota SofaScore', 'mean'),
-    Minutos=('Minutos', 'sum'),
-    Goles=('Goles', 'sum'),
-    Asistencias=('Asistencias', 'sum'),
-    Pases_Clave=('Pases Clave', 'sum'),
-    Quites=('Quites (Tackles)', 'sum'),
-    Intercepciones=('Intercepciones', 'sum'),
-    Tiros_Totales=('Tiros Totales', 'sum'),
-    Efectividad_Pases=('Efectividad Pases', 'mean')
-)
-df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
-df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
+    df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
+        Partidos=('Nota SofaScore', 'count'),
+        Promedio=('Nota SofaScore', 'mean'),
+        Minutos=('Minutos', 'sum'),
+        Goles=('Goles', 'sum'),
+        Asistencias=('Asistencias', 'sum'),
+        Pases_Clave=('Pases Clave', 'sum'),
+        Quites=('Quites (Tackles)', 'sum'),
+        Intercepciones=('Intercepciones', 'sum'),
+        Tiros_Totales=('Tiros Totales', 'sum'),
+        Efectividad_Pases=('Efectividad Pases', 'mean')
+    )
+    df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
+    df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
-df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
-    lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
-).reset_index(name='Forma (Últ. 5)')
-df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
+    df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
+        lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
+    ).reset_index(name='Forma (Últ. 5)')
+    df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 
 
 # =============================================================================
@@ -763,7 +557,7 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 
 # ─── RESUMEN GENERAL ──────────────────────────────────────────────────────────
 if menu == "Resumen General":
-    page_header("🐔", f"PANEL GENERAL", f"Temporada {temporada_sel}")
+    page_header("🐔", "PANEL GENERAL", f"Temporada {temporada_sel}")
 
     total_partidos = df_raw['Partido'].nunique()
     promedio_equipo = df_raw['Nota SofaScore'].mean()
@@ -787,9 +581,7 @@ if menu == "Resumen General":
         fig_prom = go.Figure()
         colores_barras = [COLORES_POSICION.get(p, '#9CA3AF') for p in df_promedios['Posición']]
         fig_prom.add_trace(go.Bar(
-            x=df_promedios['Promedio'],
-            y=df_promedios['Jugador'],
-            orientation='h',
+            x=df_promedios['Promedio'], y=df_promedios['Jugador'], orientation='h',
             marker=dict(color=colores_barras, line=dict(width=0)),
             text=df_promedios['Promedio'].apply(lambda x: f"{x:.2f}"),
             textposition='outside',
@@ -797,24 +589,14 @@ if menu == "Resumen General":
             hovertemplate="<b>%{y}</b><br>Nota: %{x:.2f}<br>Partidos: %{customdata}<extra></extra>",
             customdata=df_promedios['Partidos'],
         ))
-        fig_prom.add_vline(
-            x=promedio_equipo,
-            line_dash="dot",
-            line_color="#D0021B",
-            line_width=2,
-            annotation_text=f"Prom. Equipo: {promedio_equipo:.2f}",
-            annotation_position="top right",
-            annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"),
-        )
+        fig_prom.add_vline(x=promedio_equipo, line_dash="dot", line_color="#D0021B", line_width=2,
+            annotation_text=f"Prom. Equipo: {promedio_equipo:.2f}", annotation_position="top right",
+            annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"))
         apply_plotly_style(fig_prom, xaxis_title="Nota Promedio SofaScore", yaxis_title="")
-        fig_prom.update_layout(
-            height=max(400, len(df_promedios) * 28),
-            xaxis=dict(range=[5, 8.5]),
-            yaxis=dict(categoryorder='total ascending'),
-        )
+        fig_prom.update_layout(height=max(400, len(df_promedios) * 28),
+            xaxis=dict(range=[5, 8.5]), yaxis=dict(categoryorder='total ascending'))
         st.plotly_chart(fig_prom, use_container_width=True)
-
-        st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Los colores representan la posición: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🟠 POR</b></div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Colores: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🟠 POR</b></div>", unsafe_allow_html=True)
 
     with tab2:
         c1, c2 = st.columns(2)
@@ -824,8 +606,7 @@ if menu == "Resumen General":
             df_gol.index = df_gol.index + 1
             if not df_gol.empty:
                 fig_gol = go.Figure(go.Bar(
-                    x=df_gol['Jugador'], y=df_gol['Goles'],
-                    marker_color='#D0021B',
+                    x=df_gol['Jugador'], y=df_gol['Goles'], marker_color='#D0021B',
                     text=df_gol['Goles'], textposition='outside',
                     textfont=dict(family="Bebas Neue", size=18, color="#D0021B"),
                     hovertemplate="<b>%{x}</b><br>Goles: %{y}<extra></extra>",
@@ -841,8 +622,7 @@ if menu == "Resumen General":
             df_ast.index = df_ast.index + 1
             if not df_ast.empty:
                 fig_ast = go.Figure(go.Bar(
-                    x=df_ast['Jugador'], y=df_ast['Asistencias'],
-                    marker_color='#3B82F6',
+                    x=df_ast['Jugador'], y=df_ast['Asistencias'], marker_color='#3B82F6',
                     text=df_ast['Asistencias'], textposition='outside',
                     textfont=dict(family="Bebas Neue", size=18, color="#3B82F6"),
                     hovertemplate="<b>%{x}</b><br>Asistencias: %{y}<extra></extra>",
@@ -854,19 +634,355 @@ if menu == "Resumen General":
 
     with tab3:
         st.dataframe(
-            df_agrupado[['Jugador', 'Posición', 'Partidos', 'Promedio', 'Minutos', 'Goles', 'Asistencias', 'Pases_Clave', 'Quites', 'Intercepciones', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True),
-            hide_index=True,
-            use_container_width=True,
-            height=500,
+            df_agrupado[['Jugador', 'Posición', 'Partidos', 'Promedio', 'Minutos', 'Goles', 'Asistencias',
+                          'Pases_Clave', 'Quites', 'Intercepciones', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True),
+            hide_index=True, use_container_width=True, height=500,
         )
+
+# ─── MERCADO DE PASES ─────────────────────────────────────────────────────────
+elif menu == "Mercado de Pases":
+    page_header("💰", "MERCADO DE PASES", f"Temporada {temporada_sel} · Altas, Bajas y Movimientos")
+
+    df_mp_full = cargar_mercado_pases()
+
+    if df_mp_full.empty:
+        st.error("⚠️ No se encontró el archivo Mercado_de_Pases_River.xlsx en la carpeta de la app.")
+        st.stop()
+
+    df_mp = df_mp_full[df_mp_full['Temporada'] == temporada_sel].copy()
+
+    if df_mp.empty:
+        st.warning(f"No hay datos de mercado de pases para la temporada {temporada_sel}.")
+        st.stop()
+
+    altas = df_mp[df_mp['tipo'] == 'Alta']
+    bajas = df_mp[df_mp['tipo'] == 'Baja']
+
+    # KPIs
+    ingresos  = bajas['valor_mill'].sum()
+    gastos    = altas['valor_mill'].sum()
+    balance   = ingresos - gastos
+    n_altas   = len(altas)
+    n_bajas   = len(bajas)
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric("Incorporaciones", int(n_altas))
+    k2.metric("Salidas", int(n_bajas))
+    k3.metric("Inversión Total", f"€{gastos:.2f}M")
+    k4.metric("Ingresos Totales", f"€{ingresos:.2f}M")
+    k5.metric("Balance Neto", f"€{balance:+.2f}M",
+              delta="Superávit ✅" if balance >= 0 else "Déficit ❌")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    tab_resumen, tab_altas_t, tab_bajas_t, tab_historico = st.tabs([
+        "📊 Resumen Visual", "🟢 Altas Detalladas", "🔴 Bajas Detalladas", "📈 Histórico Multi-Temporada"
+    ])
+
+    # ── TAB 1: RESUMEN VISUAL ─────────────────────────────────────────────────
+    with tab_resumen:
+        col_pie, col_bar = st.columns([1, 1.6])
+
+        with col_pie:
+            st.markdown("<div class='section-title' style='font-size:20px;'>🔄 TIPOS DE MOVIMIENTOS</div>", unsafe_allow_html=True)
+            cat_counts = df_mp['categoria'].value_counts().reset_index()
+            cat_counts.columns = ['Categoría', 'Cantidad']
+
+            COLORES_CAT = {
+                'Transferencia':        '#D0021B',
+                'Cesión con Coste':     '#F97316',
+                'Libre':                '#6B7280',
+                'Cesión':               '#3B82F6',
+                'Fin de Cesión':        '#8B5CF6',
+                'Libre / Fin de Préstamo': '#9CA3AF',
+                'Otro':                 '#E5E7EB',
+            }
+            colors_pie = [COLORES_CAT.get(c, '#9CA3AF') for c in cat_counts['Categoría']]
+
+            fig_pie = go.Figure(go.Pie(
+                labels=cat_counts['Categoría'], values=cat_counts['Cantidad'],
+                hole=0.52,
+                marker=dict(colors=colors_pie, line=dict(color='white', width=2)),
+                textinfo='label+value',
+                textfont=dict(family='Rajdhani', size=12),
+                hovertemplate="<b>%{label}</b><br>Cantidad: %{value}<br>%{percent}<extra></extra>",
+            ))
+            fig_pie.add_annotation(
+                text=f"<b>{len(df_mp)}</b><br>movimientos",
+                x=0.5, y=0.5, font_size=16, showarrow=False,
+                font=dict(family='Bebas Neue', color='#111827'),
+            )
+            fig_pie.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0, r=0, t=10, b=10),
+                showlegend=True, legend=dict(font=dict(family='Rajdhani', size=12), orientation='v'),
+                height=320,
+            )
+            st.plotly_chart(fig_pie, use_container_width=True)
+
+            st.markdown("""
+            <div class='info-box'>
+            <b>🔴 Transferencia</b>: pago acordado entre clubes &nbsp;·&nbsp;
+            <b>🟠 Cesión con Coste</b>: préstamo con fee &nbsp;·&nbsp;
+            <b>⚫ Libre</b>: jugador sin contrato &nbsp;·&nbsp;
+            <b>🔵 Cesión</b>: préstamo sin coste &nbsp;·&nbsp;
+            <b>🟣 Fin de Cesión</b>: regreso de préstamo
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col_bar:
+            st.markdown("<div class='section-title' style='font-size:20px;'>⚖️ BALANCE FINANCIERO POR TIPO</div>", unsafe_allow_html=True)
+
+            df_vals = df_mp[df_mp['valor_mill'] > 0].copy()
+            df_altas_v = df_vals[df_vals['tipo'] == 'Alta'].groupby('categoria')['valor_mill'].sum().reset_index()
+            df_bajas_v = df_vals[df_vals['tipo'] == 'Baja'].groupby('categoria')['valor_mill'].sum().reset_index()
+
+            if not df_altas_v.empty or not df_bajas_v.empty:
+                fig_bal = go.Figure()
+                if not df_altas_v.empty:
+                    fig_bal.add_trace(go.Bar(
+                        name='Inversión (Altas)', x=df_altas_v['categoria'], y=df_altas_v['valor_mill'],
+                        marker_color='#22C55E',
+                        text=[f"€{v:.2f}M" for v in df_altas_v['valor_mill']],
+                        textposition='outside', textfont=dict(family='Rajdhani', size=12),
+                        hovertemplate="<b>%{x}</b><br>Gasto: €%{y:.2f}M<extra></extra>",
+                    ))
+                if not df_bajas_v.empty:
+                    fig_bal.add_trace(go.Bar(
+                        name='Ingresos (Bajas)', x=df_bajas_v['categoria'], y=df_bajas_v['valor_mill'],
+                        marker_color='#D0021B',
+                        text=[f"€{v:.2f}M" for v in df_bajas_v['valor_mill']],
+                        textposition='outside', textfont=dict(family='Rajdhani', size=12),
+                        hovertemplate="<b>%{x}</b><br>Ingreso: €%{y:.2f}M<extra></extra>",
+                    ))
+                apply_plotly_style(fig_bal, yaxis_title="Millones de €")
+                fig_bal.update_layout(barmode='group', height=320, xaxis=dict(tickangle=-15))
+                st.plotly_chart(fig_bal, use_container_width=True)
+            else:
+                st.info("No hay movimientos con valor económico en esta temporada.")
+
+        # Tabla de resumen económico
+        st.markdown("<div class='section-title' style='font-size:20px;'>📋 RESUMEN ECONÓMICO DE LA TEMPORADA</div>", unsafe_allow_html=True)
+        resumen_data = {
+            'Indicador': [
+                '💸 Inversión en incorporaciones',
+                '💰 Ingresos por ventas/cesiones',
+                '📊 Balance neto del mercado',
+                '🟢 Total de incorporaciones',
+                '🔴 Total de salidas',
+                '🔄 Transferencias directas (entrada)',
+                '🔄 Transferencias directas (salida)',
+                '🔵 Cesiones recibidas',
+                '🔵 Cesiones cedidas',
+                '⚫ Altas sin coste (libre / fin cesión)',
+                '⚫ Bajas sin coste (libre / fin cesión)',
+            ],
+            'Valor': [
+                f"€{gastos:.2f} millones",
+                f"€{ingresos:.2f} millones",
+                f"€{balance:+.2f} millones {'✅ Superávit' if balance >= 0 else '❌ Déficit'}",
+                str(n_altas),
+                str(n_bajas),
+                str(len(altas[altas['categoria'] == 'Transferencia'])),
+                str(len(bajas[bajas['categoria'] == 'Transferencia'])),
+                str(len(altas[altas['categoria'].isin(['Cesión', 'Cesión con Coste'])])),
+                str(len(bajas[bajas['categoria'].isin(['Cesión', 'Cesión con Coste'])])),
+                str(len(altas[altas['categoria'].isin(['Libre', 'Fin de Cesión', 'Libre / Fin de Préstamo'])])),
+                str(len(bajas[bajas['categoria'].isin(['Libre', 'Fin de Cesión', 'Libre / Fin de Préstamo'])])),
+            ]
+        }
+        st.dataframe(pd.DataFrame(resumen_data), hide_index=True, use_container_width=True)
+
+    # ── TAB 2: ALTAS ──────────────────────────────────────────────────────────
+    with tab_altas_t:
+        st.markdown(f"<div class='section-title'>🟢 INCORPORACIONES · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>Todos los jugadores que llegaron al club en esta temporada. Ordenados por valor de operación y tipo.</div>", unsafe_allow_html=True)
+
+        altas_transfer = altas[altas['valor_mill'] > 0].sort_values('valor_mill', ascending=False)
+        if not altas_transfer.empty:
+            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>💸 MAYORES INVERSIONES DE LA TEMPORADA</div>", unsafe_allow_html=True)
+            fig_altas = go.Figure(go.Bar(
+                x=altas_transfer['valor_mill'],
+                y=altas_transfer['nombre'],
+                orientation='h',
+                marker=dict(
+                    color=altas_transfer['valor_mill'],
+                    colorscale=[[0, '#86EFAC'], [1, '#15803D']],
+                    line=dict(width=0),
+                ),
+                text=[f"  €{v:.2f}M  ·  {c}" for v, c in zip(altas_transfer['valor_mill'], altas_transfer['club'])],
+                textposition='outside',
+                textfont=dict(family='Rajdhani', size=12, color='#1F2937'),
+                hovertemplate="<b>%{y}</b><br>Coste: €%{x:.2f}M<br>Club origen: %{customdata}<extra></extra>",
+                customdata=altas_transfer['club'],
+            ))
+            apply_plotly_style(fig_altas, xaxis_title="Millones de €", yaxis_title="")
+            fig_altas.update_layout(height=max(280, len(altas_transfer) * 42),
+                yaxis=dict(categoryorder='total ascending'))
+            st.plotly_chart(fig_altas, use_container_width=True)
+
+        st.markdown("<div class='section-title' style='font-size:18px;'>📋 LISTADO COMPLETO DE ALTAS</div>", unsafe_allow_html=True)
+
+        orden_cat = ['Transferencia', 'Cesión con Coste', 'Libre', 'Cesión', 'Fin de Cesión', 'Libre / Fin de Préstamo', 'Otro']
+        df_altas_display = altas[['nombre', 'categoria', 'coste', 'club']].copy()
+        df_altas_display['_orden'] = df_altas_display['categoria'].apply(
+            lambda x: orden_cat.index(x) if x in orden_cat else 99)
+        df_altas_display = df_altas_display.sort_values('_orden').drop('_orden', axis=1).reset_index(drop=True)
+        df_altas_display.index = df_altas_display.index + 1
+        df_altas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Coste', 'Club de Procedencia']
+        st.dataframe(df_altas_display, hide_index=False, use_container_width=True, height=460)
+
+    # ── TAB 3: BAJAS ──────────────────────────────────────────────────────────
+    with tab_bajas_t:
+        st.markdown(f"<div class='section-title'>🔴 SALIDAS · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>Todos los jugadores que dejaron el club, con su destino y el ingreso generado para River Plate.</div>", unsafe_allow_html=True)
+
+        bajas_transfer = bajas[bajas['valor_mill'] > 0].sort_values('valor_mill', ascending=False)
+        if not bajas_transfer.empty:
+            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>💰 MAYORES INGRESOS POR VENTAS</div>", unsafe_allow_html=True)
+            fig_bajas = go.Figure(go.Bar(
+                x=bajas_transfer['valor_mill'],
+                y=bajas_transfer['nombre'],
+                orientation='h',
+                marker=dict(
+                    color=bajas_transfer['valor_mill'],
+                    colorscale=[[0, '#FCA5A5'], [1, '#B91C1C']],
+                    line=dict(width=0),
+                ),
+                text=[f"  €{v:.2f}M  ·  {c}" for v, c in zip(bajas_transfer['valor_mill'], bajas_transfer['club'])],
+                textposition='outside',
+                textfont=dict(family='Rajdhani', size=12, color='#1F2937'),
+                hovertemplate="<b>%{y}</b><br>Ingreso: €%{x:.2f}M<br>Club destino: %{customdata}<extra></extra>",
+                customdata=bajas_transfer['club'],
+            ))
+            apply_plotly_style(fig_bajas, xaxis_title="Millones de €", yaxis_title="")
+            fig_bajas.update_layout(height=max(280, len(bajas_transfer) * 42),
+                yaxis=dict(categoryorder='total ascending'))
+            st.plotly_chart(fig_bajas, use_container_width=True)
+
+        st.markdown("<div class='section-title' style='font-size:18px;'>📋 LISTADO COMPLETO DE BAJAS</div>", unsafe_allow_html=True)
+
+        orden_cat = ['Transferencia', 'Cesión con Coste', 'Libre', 'Cesión', 'Fin de Cesión', 'Libre / Fin de Préstamo', 'Otro']
+        df_bajas_display = bajas[['nombre', 'categoria', 'coste', 'club']].copy()
+        df_bajas_display['_orden'] = df_bajas_display['categoria'].apply(
+            lambda x: orden_cat.index(x) if x in orden_cat else 99)
+        df_bajas_display = df_bajas_display.sort_values('_orden').drop('_orden', axis=1).reset_index(drop=True)
+        df_bajas_display.index = df_bajas_display.index + 1
+        df_bajas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Ingreso', 'Club de Destino']
+        st.dataframe(df_bajas_display, hide_index=False, use_container_width=True, height=460)
+
+    # ── TAB 4: HISTÓRICO ──────────────────────────────────────────────────────
+    with tab_historico:
+        st.markdown("<div class='section-title'>📈 EVOLUCIÓN HISTÓRICA DEL MERCADO</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>Comparativa de todas las temporadas: inversiones, ingresos y balance neto. Los valores reflejan sólo operaciones con coste económico declarado.</div>", unsafe_allow_html=True)
+
+        resumen_historico = []
+        for temp in sorted(df_mp_full['Temporada'].unique()):
+            df_t = df_mp_full[df_mp_full['Temporada'] == temp]
+            resumen_historico.append({
+                'Temporada': temp,
+                'Altas': len(df_t[df_t['tipo'] == 'Alta']),
+                'Bajas': len(df_t[df_t['tipo'] == 'Baja']),
+                'Inversión (M€)': round(df_t[df_t['tipo'] == 'Alta']['valor_mill'].sum(), 2),
+                'Ingresos (M€)':  round(df_t[df_t['tipo'] == 'Baja']['valor_mill'].sum(), 2),
+            })
+        df_hist = pd.DataFrame(resumen_historico)
+        df_hist['Balance (M€)'] = (df_hist['Ingresos (M€)'] - df_hist['Inversión (M€)']).round(2)
+
+        c_izq, c_der = st.columns(2)
+
+        with c_izq:
+            fig_lines = go.Figure()
+            fig_lines.add_trace(go.Scatter(
+                x=df_hist['Temporada'], y=df_hist['Inversión (M€)'],
+                mode='lines+markers+text', name='Inversión (Altas)',
+                line=dict(color='#22C55E', width=3), marker=dict(size=10, color='#22C55E'),
+                text=[f"€{v:.1f}M" for v in df_hist['Inversión (M€)']],
+                textposition='top center', textfont=dict(family='Rajdhani', size=11),
+                hovertemplate="<b>%{x}</b><br>Inversión: €%{y:.2f}M<extra></extra>",
+            ))
+            fig_lines.add_trace(go.Scatter(
+                x=df_hist['Temporada'], y=df_hist['Ingresos (M€)'],
+                mode='lines+markers+text', name='Ingresos (Bajas)',
+                line=dict(color='#D0021B', width=3), marker=dict(size=10, color='#D0021B'),
+                text=[f"€{v:.1f}M" for v in df_hist['Ingresos (M€)']],
+                textposition='bottom center', textfont=dict(family='Rajdhani', size=11),
+                hovertemplate="<b>%{x}</b><br>Ingresos: €%{y:.2f}M<extra></extra>",
+            ))
+            apply_plotly_style(fig_lines, title='INVERSIÓN VS INGRESOS',
+                               xaxis_title='Temporada', yaxis_title='Millones de €')
+            fig_lines.update_layout(height=380,
+                legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
+            st.plotly_chart(fig_lines, use_container_width=True)
+
+        with c_der:
+            colores_balance = ['#22C55E' if b >= 0 else '#D0021B' for b in df_hist['Balance (M€)']]
+            fig_balance = go.Figure(go.Bar(
+                x=df_hist['Temporada'], y=df_hist['Balance (M€)'],
+                marker_color=colores_balance,
+                text=[f"€{b:+.1f}M" for b in df_hist['Balance (M€)']],
+                textposition='outside',
+                textfont=dict(family='Bebas Neue', size=16),
+                hovertemplate="<b>%{x}</b><br>Balance: €%{y:+.2f}M<extra></extra>",
+            ))
+            fig_balance.add_hline(y=0, line_color='#374151', line_width=1.5)
+            apply_plotly_style(fig_balance, title='BALANCE NETO POR TEMPORADA',
+                               xaxis_title='Temporada', yaxis_title='Millones de €')
+            fig_balance.update_layout(height=380)
+            st.plotly_chart(fig_balance, use_container_width=True)
+
+        st.markdown("<div class='section-title' style='font-size:18px;'>🔄 VOLUMEN DE MOVIMIENTOS POR TEMPORADA</div>", unsafe_allow_html=True)
+        fig_mov = go.Figure()
+        fig_mov.add_trace(go.Bar(
+            name='Incorporaciones', x=df_hist['Temporada'], y=df_hist['Altas'],
+            marker_color='#22C55E',
+            text=df_hist['Altas'], textposition='inside',
+            textfont=dict(family='Bebas Neue', size=18, color='white'),
+        ))
+        fig_mov.add_trace(go.Bar(
+            name='Salidas', x=df_hist['Temporada'], y=df_hist['Bajas'],
+            marker_color='#D0021B',
+            text=df_hist['Bajas'], textposition='inside',
+            textfont=dict(family='Bebas Neue', size=18, color='white'),
+        ))
+        apply_plotly_style(fig_mov, xaxis_title='Temporada', yaxis_title='Cantidad de Jugadores')
+        fig_mov.update_layout(barmode='group', height=300,
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1))
+        st.plotly_chart(fig_mov, use_container_width=True)
+
+        st.markdown("<div class='section-title' style='font-size:18px;'>📋 TABLA HISTÓRICA COMPLETA</div>", unsafe_allow_html=True)
+        df_hist_display = df_hist.copy()
+        df_hist_display['Inversión (M€)'] = df_hist_display['Inversión (M€)'].apply(lambda x: f"€{x:.2f}M")
+        df_hist_display['Ingresos (M€)']  = df_hist_display['Ingresos (M€)'].apply(lambda x: f"€{x:.2f}M")
+        df_hist_display['Balance (M€)']   = df_hist_display['Balance (M€)'].apply(lambda x: f"€{x:+.2f}M")
+        st.dataframe(df_hist_display, hide_index=True, use_container_width=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        c_top1, c_top2 = st.columns(2)
+        with c_top1:
+            st.markdown("<div class='section-title section-title-red' style='font-size:18px;'>🏆 TOP 10 VENTAS HISTÓRICAS</div>", unsafe_allow_html=True)
+            top_ventas = df_mp_full[df_mp_full['tipo'] == 'Baja'].nlargest(10, 'valor_mill')[
+                ['nombre', 'Temporada', 'valor_mill', 'club']].reset_index(drop=True)
+            top_ventas.index = top_ventas.index + 1
+            top_ventas.columns = ['Jugador', 'Temporada', 'Valor (M€)', 'Club Destino']
+            top_ventas['Valor (M€)'] = top_ventas['Valor (M€)'].apply(lambda x: f"€{x:.2f}M")
+            st.dataframe(top_ventas, hide_index=False, use_container_width=True)
+
+        with c_top2:
+            st.markdown("<div class='section-title' style='font-size:18px;'>💸 TOP 10 INVERSIONES HISTÓRICAS</div>", unsafe_allow_html=True)
+            top_compras = df_mp_full[df_mp_full['tipo'] == 'Alta'].nlargest(10, 'valor_mill')[
+                ['nombre', 'Temporada', 'valor_mill', 'club']].reset_index(drop=True)
+            top_compras.index = top_compras.index + 1
+            top_compras.columns = ['Jugador', 'Temporada', 'Valor (M€)', 'Club Origen']
+            top_compras['Valor (M€)'] = top_compras['Valor (M€)'].apply(lambda x: f"€{x:.2f}M")
+            st.dataframe(top_compras, hide_index=False, use_container_width=True)
 
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
 elif menu == "Historial":
     page_header("📖", "HISTORIAL VS RIVALES", f"Temporada {temporada_sel}")
-    
+
     hojas_unicas = df_raw.drop_duplicates('Partido')['Hoja_Original'].tolist()
     df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas)
-    
+
     if df_historial.empty:
         st.info("No hay datos suficientes para armar el historial en esta temporada.")
     else:
@@ -875,56 +991,43 @@ elif menu == "Historial":
         total_pe = df_historial['PE'].sum()
         total_pp = df_historial['PP'].sum()
         efectividad = (total_pg * 3 + total_pe) / (total_pj * 3) * 100 if total_pj > 0 else 0
-        
+
         c1, c2, c3, c4, c5 = st.columns(5)
         c1.metric("Partidos Jugados", int(total_pj))
         c2.metric("Victorias", int(total_pg))
         c3.metric("Empates", int(total_pe))
         c4.metric("Derrotas", int(total_pp))
         c5.metric("Efectividad Puntos", f"{efectividad:.1f}%")
-        
+
         st.markdown("<br>", unsafe_allow_html=True)
-        
         c_graf, c_tabla = st.columns([1.5, 1])
-        
+
         with c_graf:
             st.markdown("<div class='section-title'>📊 EFECTIVIDAD POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
-            
             fig_hist = go.Figure()
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PG'], 
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PG'],
                 name='Ganados', orientation='h', marker=dict(color='#22C55E'),
-                text=df_hist_graf['PG'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PE'], 
+                text=df_hist_graf['PG'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PE'],
                 name='Empatados', orientation='h', marker=dict(color='#9CA3AF'),
-                text=df_hist_graf['PE'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PP'], 
+                text=df_hist_graf['PE'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PP'],
                 name='Perdidos', orientation='h', marker=dict(color='#EF4444'),
-                text=df_hist_graf['PP'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            
+                text=df_hist_graf['PP'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
             apply_plotly_style(fig_hist, xaxis_title="Cantidad de Partidos", yaxis_title="")
-            fig_hist.update_layout(
-                barmode='stack',
-                height=max(400, len(df_hist_graf) * 35),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-            )
+            fig_hist.update_layout(barmode='stack', height=max(400, len(df_hist_graf) * 35),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan como <b>Empate</b>.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
-            st.dataframe(
-                df_historial[['Rival', 'PJ', 'PG', 'PE', 'PP', 'GF', 'GC', 'DIF']],
-                hide_index=True,
-                use_container_width=True,
-                height=600
-            )
+            st.dataframe(df_historial[['Rival', 'PJ', 'PG', 'PE', 'PP', 'GF', 'GC', 'DIF']],
+                hide_index=True, use_container_width=True, height=600)
 
 # ─── MAPAS DE RENDIMIENTO ─────────────────────────────────────────────────────
 elif menu == "Mapas de Rendimiento":
@@ -941,36 +1044,23 @@ elif menu == "Mapas de Rendimiento":
         st.stop()
 
     for col_base, col_p90 in [
-        ('Pases_Clave', 'PasesClave_P90'),
-        ('Asistencias', 'Asistencias_P90'),
-        ('Quites', 'Quites_P90'),
-        ('Intercepciones', 'Inter_P90'),
-        ('Goles', 'Goles_P90'),
+        ('Pases_Clave', 'PasesClave_P90'), ('Asistencias', 'Asistencias_P90'),
+        ('Quites', 'Quites_P90'), ('Intercepciones', 'Inter_P90'), ('Goles', 'Goles_P90'),
     ]:
         df_p90[col_p90] = (df_p90[col_base] / df_p90['Minutos'].replace(0, 1)) * 90
 
     def scatter_cuadrantes(df, x_col, y_col, x_label, y_label, title):
-        x_mean = df[x_col].mean()
-        y_mean = df[y_col].mean()
-        fig = px.scatter(
-            df, x=x_col, y=y_col,
-            color='Posición',
-            hover_name='Jugador',
-            color_discrete_map=COLORES_POSICION,
-            size_max=18,
-        )
-        fig.update_traces(
-            marker=dict(size=14, line=dict(width=1.5, color='white')),
-            hovertemplate="<b>%{hovertext}</b><br>" + x_label + ": %{x:.2f}<br>" + y_label + ": %{y:.2f}<extra></extra>",
-        )
+        x_mean, y_mean = df[x_col].mean(), df[y_col].mean()
+        fig = px.scatter(df, x=x_col, y=y_col, color='Posición', hover_name='Jugador',
+            color_discrete_map=COLORES_POSICION, size_max=18)
+        fig.update_traces(marker=dict(size=14, line=dict(width=1.5, color='white')),
+            hovertemplate="<b>%{hovertext}</b><br>" + x_label + ": %{x:.2f}<br>" + y_label + ": %{y:.2f}<extra></extra>")
         fig.add_vline(x=x_mean, line_dash="dash", line_color="#9CA3AF", line_width=1,
-                      annotation_text=f"Prom. {x_label}: {x_mean:.2f}",
-                      annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"),
-                      annotation_position="top right")
+            annotation_text=f"Prom. {x_label}: {x_mean:.2f}",
+            annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"), annotation_position="top right")
         fig.add_hline(y=y_mean, line_dash="dash", line_color="#9CA3AF", line_width=1,
-                      annotation_text=f"Prom. {y_label}: {y_mean:.2f}",
-                      annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"),
-                      annotation_position="right")
+            annotation_text=f"Prom. {y_label}: {y_mean:.2f}",
+            annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"), annotation_position="right")
         apply_plotly_style(fig, title=title, xaxis_title=x_label, yaxis_title=y_label)
         fig.update_layout(height=420, legend_title_text="Posición")
         return fig
@@ -980,23 +1070,20 @@ elif menu == "Mapas de Rendimiento":
     with tab_def:
         st.markdown("<div class='info-box'>Los jugadores en el cuadrante superior derecho son los más activos en recuperación de balón.</div>", unsafe_allow_html=True)
         fig_def = scatter_cuadrantes(df_p90, 'Quites_P90', 'Inter_P90',
-                                     'Quites por 90 min', 'Intercepciones por 90 min',
-                                     'PERFIL DEFENSIVO')
+            'Quites por 90 min', 'Intercepciones por 90 min', 'PERFIL DEFENSIVO')
         st.plotly_chart(fig_def, use_container_width=True)
 
     with tab_cre:
         c1, c2 = st.columns(2)
         with c1:
             fig_kp = scatter_cuadrantes(df_p90, 'PasesClave_P90', 'Asistencias_P90',
-                                        'Pases Clave por 90 min', 'Asistencias por 90 min',
-                                        'CREACIÓN DE JUEGO')
+                'Pases Clave por 90 min', 'Asistencias por 90 min', 'CREACIÓN DE JUEGO')
             st.plotly_chart(fig_kp, use_container_width=True)
         with c2:
             df_pases = df_p90[df_p90['Efectividad_Pases'] > 0].copy()
             if not df_pases.empty:
                 fig_ef = scatter_cuadrantes(df_pases, 'PasesClave_P90', 'Efectividad_Pases',
-                                            'Pases Clave por 90 min', 'Efectividad de Pases (%)',
-                                            'CALIDAD DE PASE')
+                    'Pases Clave por 90 min', 'Efectividad de Pases (%)', 'CALIDAD DE PASE')
                 st.plotly_chart(fig_ef, use_container_width=True)
             else:
                 st.info("Sin datos de efectividad de pases.")
@@ -1005,36 +1092,21 @@ elif menu == "Mapas de Rendimiento":
         df_t = df_agrupado[df_agrupado['Tiros_Totales'] > 0].copy()
         if not df_t.empty:
             df_t['Conv_Rate'] = (df_t['Goles'] / df_t['Tiros_Totales'] * 100).round(1)
-            referencia_rate = 0.20
-
-            fig_of = px.scatter(
-                df_t, x='Tiros_Totales', y='Goles',
-                color='Posición',
-                hover_name='Jugador',
-                color_discrete_map=COLORES_POSICION,
-                custom_data=['Conv_Rate', 'Minutos'],
-            )
-            fig_of.update_traces(
-                marker=dict(size=14, line=dict(width=1.5, color='white')),
-                hovertemplate="<b>%{hovertext}</b><br>Tiros: %{x}<br>Goles: %{y}<br>Conversión: %{customdata[0]:.1f}%<extra></extra>",
-            )
+            fig_of = px.scatter(df_t, x='Tiros_Totales', y='Goles', color='Posición',
+                hover_name='Jugador', color_discrete_map=COLORES_POSICION,
+                custom_data=['Conv_Rate', 'Minutos'])
+            fig_of.update_traces(marker=dict(size=14, line=dict(width=1.5, color='white')),
+                hovertemplate="<b>%{hovertext}</b><br>Tiros: %{x}<br>Goles: %{y}<br>Conversión: %{customdata[0]:.1f}%<extra></extra>")
             max_tiros = df_t['Tiros_Totales'].max()
-            fig_of.add_shape(
-                type="line", x0=0, y0=0,
-                x1=max_tiros + 2, y1=(max_tiros + 2) * referencia_rate,
-                line=dict(color="#6B7280", dash="dot", width=1.5),
-            )
-            fig_of.add_annotation(
-                x=max_tiros + 1, y=(max_tiros + 1) * referencia_rate,
-                text="Ref. 20% conversión",
-                font=dict(family="Rajdhani", size=11, color="#6B7280"),
-                showarrow=False,
-            )
+            fig_of.add_shape(type="line", x0=0, y0=0, x1=max_tiros + 2, y1=(max_tiros + 2) * 0.20,
+                line=dict(color="#6B7280", dash="dot", width=1.5))
+            fig_of.add_annotation(x=max_tiros + 1, y=(max_tiros + 1) * 0.20, text="Ref. 20% conversión",
+                font=dict(family="Rajdhani", size=11, color="#6B7280"), showarrow=False)
             apply_plotly_style(fig_of, title='EFICIENCIA GOLEADORA',
-                               xaxis_title='Tiros Totales', yaxis_title='Goles')
+                xaxis_title='Tiros Totales', yaxis_title='Goles')
             fig_of.update_layout(height=420)
             st.plotly_chart(fig_of, use_container_width=True)
-            st.markdown("<div class='info-box'>La línea punteada representa el umbral de referencia del 20% de conversión (estándar para delanteros de élite).</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>La línea punteada representa el umbral del 20% de conversión (referencia élite).</div>", unsafe_allow_html=True)
         else:
             st.info("Sin datos de tiros disponibles.")
 
@@ -1054,16 +1126,13 @@ elif menu == "Análisis Individual":
 
         st.markdown(f"""
         <div style="background:linear-gradient(135deg,#111827,#1F2937);border-left:4px solid #D0021B;
-                    border-radius:10px;padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;">
-            <div>
-                <div style="font-family:'Bebas Neue',cursive;font-size:36px;color:white;letter-spacing:2px;">{jugador_sel}</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:#D0021B;letter-spacing:2px;font-weight:700;">
-                    {pos} · {parts} PARTIDOS · {min_tot} MINUTOS
-                </div>
+                    border-radius:10px;padding:20px 28px;margin-bottom:24px;">
+            <div style="font-family:'Bebas Neue',cursive;font-size:36px;color:white;letter-spacing:2px;">{jugador_sel}</div>
+            <div style="font-family:'Rajdhani',sans-serif;font-size:13px;color:#D0021B;letter-spacing:2px;font-weight:700;">
+                {pos} · {parts} PARTIDOS · {min_tot} MINUTOS
             </div>
-            <div style="margin-left:auto;text-align:right;">
-                <div style="font-family:'Bebas Neue',cursive;font-size:56px;color:#D0021B;line-height:1;">{prom:.2f}</div>
-                <div style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#9CA3AF;letter-spacing:2px;">NOTA PROMEDIO</div>
+            <div style="margin-top:12px;font-family:'Bebas Neue',cursive;font-size:56px;color:#D0021B;line-height:1;">{prom:.2f}
+                <span style="font-family:'Rajdhani',sans-serif;font-size:11px;color:#9CA3AF;letter-spacing:2px;vertical-align:middle;"> NOTA PROMEDIO</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
@@ -1072,90 +1141,60 @@ elif menu == "Análisis Individual":
         color_barras = ['#D0021B' if n >= prom else '#9CA3AF' for n in df_j['Nota SofaScore']]
         fig_l = go.Figure()
         fig_l.add_trace(go.Bar(
-            x=df_j['Partido'],
-            y=df_j['Nota SofaScore'],
+            x=df_j['Partido'], y=df_j['Nota SofaScore'],
             marker_color=color_barras,
             text=df_j['Nota SofaScore'].apply(lambda n: f"{n:.1f}"),
-            textposition="outside",
-            textfont=dict(family="Bebas Neue", size=16),
+            textposition="outside", textfont=dict(family="Bebas Neue", size=16),
             hovertemplate="<b>%{x}</b><br>Nota: %{y:.1f}<extra></extra>",
         ))
-        fig_l.add_hline(
-            y=prom, line_dash="dot", line_color="#D0021B", line_width=2,
+        fig_l.add_hline(y=prom, line_dash="dot", line_color="#D0021B", line_width=2,
             annotation_text=f"Promedio: {prom:.2f}",
             annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"),
-            annotation_position="top right",
-        )
+            annotation_position="top right")
         apply_plotly_style(fig_l, yaxis_title="Nota SofaScore")
-        fig_l.update_layout(
-            yaxis=dict(range=[4, 10.5]),
-            xaxis=dict(tickangle=-30),
-            height=340,
-        )
+        fig_l.update_layout(yaxis=dict(range=[4, 10.5]), xaxis=dict(tickangle=-30), height=340)
         st.plotly_chart(fig_l, use_container_width=True)
-        st.markdown("<div class='info-box'>Las barras <b style='color:#D0021B;'>rojas</b> indican partidos por encima del promedio del jugador. Las <b style='color:#9CA3AF;'>grises</b>, por debajo.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>Las barras <b style='color:#D0021B;'>rojas</b> = partidos por encima del promedio del jugador. Las <b style='color:#9CA3AF;'>grises</b> = por debajo.</div>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-
         c_radar, c_metrics = st.columns([1.6, 1])
 
         with c_radar:
             st.markdown("<div class='section-title'>🛡️ PERFIL TÁCTICO</div>", unsafe_allow_html=True)
-            st.markdown("<div class='info-box'>El borde exterior = máximo del plantel en esa métrica (jugadores con ≥ 300 min). El área del jugador muestra su % respecto al máximo.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>El borde exterior = máximo del plantel (≥ 300 min). El área muestra el % del jugador respecto al mejor en cada categoría.</div>", unsafe_allow_html=True)
 
             metrics_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones']
             labels_radar  = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
-
             totales_jugador = [df_j[m].sum() if m in df_j.columns else 0 for m in metrics_radar]
 
-            df_squad_totals = df_raw.groupby('Jugador').agg(
-                Minutos_tot=('Minutos', 'sum')
-            ).reset_index()
+            df_squad_totals = df_raw.groupby('Jugador').agg(Minutos_tot=('Minutos', 'sum')).reset_index()
             jugadores_validos = df_squad_totals[df_squad_totals['Minutos_tot'] >= 300]['Jugador'].tolist()
             df_ref = df_raw[df_raw['Jugador'].isin(jugadores_validos)]
-
             maximos_equipo = []
             for m in metrics_radar:
                 if m in df_ref.columns:
-                    max_val = df_ref.groupby('Jugador')[m].sum().max()
-                    maximos_equipo.append(max(max_val, 1))
+                    maximos_equipo.append(max(df_ref.groupby('Jugador')[m].sum().max(), 1))
                 else:
                     maximos_equipo.append(1)
 
-            valores_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(totales_jugador, maximos_equipo)]
-            valores_norm = [min(v, 100) for v in valores_norm]
+            valores_norm = [min((v / m * 100) if m > 0 else 0, 100) for v, m in zip(totales_jugador, maximos_equipo)]
 
             fig_radar = go.Figure(data=go.Scatterpolar(
-                r=valores_norm + [valores_norm[0]],
-                theta=labels_radar + [labels_radar[0]],
-                fill='toself',
-                fillcolor='rgba(208,2,27,0.2)',
-                line=dict(color='#D0021B', width=3),
-                marker=dict(color='#D0021B', size=8),
+                r=valores_norm + [valores_norm[0]], theta=labels_radar + [labels_radar[0]],
+                fill='toself', fillcolor='rgba(208,2,27,0.2)',
+                line=dict(color='#D0021B', width=3), marker=dict(color='#D0021B', size=8),
                 hovertemplate="%{theta}: %{r:.1f}%<extra></extra>",
             ))
             fig_radar.update_layout(
-                polar=dict(
-                    bgcolor="rgba(249,250,251,1)",
-                    radialaxis=dict(
-                        visible=True, range=[0, 100],
-                        showticklabels=True,
-                        tickvals=[25, 50, 75, 100],
+                polar=dict(bgcolor="rgba(249,250,251,1)",
+                    radialaxis=dict(visible=True, range=[0, 100], tickvals=[25, 50, 75, 100],
                         ticktext=['25%', '50%', '75%', '100%'],
                         tickfont=dict(size=9, color='#9CA3AF', family='Rajdhani'),
-                        gridcolor="#E5E7EB",
-                        linecolor="#E5E7EB",
-                    ),
-                    angularaxis=dict(
-                        tickfont=dict(size=13, family="Rajdhani", color="#374151"),
-                        gridcolor="#E5E7EB",
-                        linecolor="#E5E7EB",
-                    ),
-                ),
-                showlegend=False,
-                paper_bgcolor="rgba(0,0,0,0)",
-                margin=dict(l=40, r=40, t=20, b=20),
-                height=380,
+                        gridcolor="#E5E7EB", linecolor="#E5E7EB"),
+                    angularaxis=dict(tickfont=dict(size=13, family="Rajdhani", color="#374151"),
+                        gridcolor="#E5E7EB", linecolor="#E5E7EB")),
+                showlegend=False, paper_bgcolor="rgba(0,0,0,0)",
+                margin=dict(l=40, r=40, t=20, b=20), height=380,
             )
             st.plotly_chart(fig_radar, use_container_width=True)
 
@@ -1167,7 +1206,8 @@ elif menu == "Análisis Individual":
             st.metric("Asistencias", int(df_j['Asistencias'].sum()))
             st.metric("Participación en Goles", int(df_j['Goles'].sum() + df_j['Asistencias'].sum()))
             q_col = 'Quites (Tackles)' if 'Quites (Tackles)' in df_j.columns else 'Quites'
-            st.metric("Recuperaciones Totales", int(df_j[q_col].sum() + df_j['Intercepciones'].sum()) if q_col in df_j.columns else 0)
+            rec_total = int(df_j[q_col].sum() + df_j['Intercepciones'].sum()) if q_col in df_j.columns else 0
+            st.metric("Recuperaciones Totales", rec_total)
 
 # ─── ESTADÍSTICAS DE EQUIPO ───────────────────────────────────────────────────
 elif menu == "Estadísticas de Equipo":
@@ -1176,40 +1216,10 @@ elif menu == "Estadísticas de Equipo":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
-    df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
-    if not df_equipo.empty:
-        try:
-            cols = df_equipo.columns.tolist()
-            metrica_col = cols[0]
-            local_col   = cols[1]
-            rival_col   = cols[2]
-            df_equipo[local_col] = pd.to_numeric(df_equipo[local_col], errors='coerce')
-            df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col], errors='coerce')
-            df_num = df_equipo.dropna(subset=[local_col, rival_col])
 
-            if not df_num.empty:
-                fig_eq = go.Figure()
-                fig_eq.add_trace(go.Bar(
-                    name=str(local_col), x=df_num[metrica_col], y=df_num[local_col],
-                    marker_color='#D0021B',
-                    hovertemplate="%{x}<br>" + str(local_col) + ": %{y}<extra></extra>",
-                ))
-                fig_eq.add_trace(go.Bar(
-                    name=str(rival_col), x=df_num[metrica_col], y=df_num[rival_col],
-                    marker_color='#374151',
-                    hovertemplate="%{x}<br>" + str(rival_col) + ": %{y}<extra></extra>",
-                ))
-                apply_plotly_style(fig_eq, title="COMPARATIVA DE MÉTRICAS")
-                fig_eq.update_layout(
-                    barmode='group', height=360,
-                    xaxis=dict(tickangle=-25),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                )
-                st.plotly_chart(fig_eq, use_container_width=True)
-        except Exception:
-            pass
-
-        st.dataframe(df_equipo, hide_index=True, use_container_width=True)
+    # Nota: extraer_estadisticas_equipo no estaba definida en el código original
+    # Se deja el placeholder para que el usuario la implemente
+    st.info("ℹ️ La función de estadísticas de equipo requiere definir `extraer_estadisticas_equipo`. Implementar según estructura del Excel.")
 
 # ─── ESTADÍSTICAS INDIVIDUALES ────────────────────────────────────────────────
 elif menu == "Estadísticas Individuales":
@@ -1238,14 +1248,14 @@ elif menu == "Estadísticas Individuales":
             df_p[c] = pd.to_numeric(df_p[c], errors='coerce').fillna(0)
 
     categorias_ind = {
-        "⭐ Nota SofaScore":      ("Nota SofaScore",       ['Jugador', 'Nota SofaScore']),
-        "🛡️ Quites":              ("Quites",                ['Jugador', 'Quites']),
-        "🛑 Intercepciones":      ("Intercepciones",        ['Jugador', 'Intercepciones']),
-        "⚔️ Duelos Ganados":      ("Duelos Ganados",        ['Jugador', 'Duelos Ganados', 'Efectividad Duelos']),
-        "🎯 Pases Completados":   ("Pases Completados",     ['Jugador', 'Pases Completados', 'Efectividad Pases']),
-        "🔑 Pases Clave":         ("Pases Clave",           ['Jugador', 'Pases Clave']),
-        "⚡ Regates Exitosos":    ("Regates Exitosos",      ['Jugador', 'Regates Exitosos']),
-        "👟 Tiros al Arco":       ("Tiros al Arco",         ['Jugador', 'Tiros al Arco']),
+        "⭐ Nota SofaScore":    ("Nota SofaScore",    ['Jugador', 'Nota SofaScore']),
+        "🛡️ Quites":            ("Quites",             ['Jugador', 'Quites']),
+        "🛑 Intercepciones":    ("Intercepciones",     ['Jugador', 'Intercepciones']),
+        "⚔️ Duelos Ganados":    ("Duelos Ganados",     ['Jugador', 'Duelos Ganados', 'Efectividad Duelos']),
+        "🎯 Pases Completados": ("Pases Completados",  ['Jugador', 'Pases Completados', 'Efectividad Pases']),
+        "🔑 Pases Clave":       ("Pases Clave",        ['Jugador', 'Pases Clave']),
+        "⚡ Regates Exitosos":  ("Regates Exitosos",   ['Jugador', 'Regates Exitosos']),
+        "👟 Tiros al Arco":     ("Tiros al Arco",      ['Jugador', 'Tiros al Arco']),
     }
 
     cols_grid = st.columns(2)
@@ -1319,7 +1329,7 @@ elif menu == "Cara a Cara":
         st.error("No se pudieron cargar los datos de las temporadas.")
         st.stop()
 
-    st.markdown("<div class='info-box'>Compará dos jugadores de cualquier temporada. Las estadísticas se normalizan por 90 minutos para comparaciones justas.</div>", unsafe_allow_html=True)
+    st.markdown("<div class='info-box'>Compará dos jugadores de cualquier temporada. Las estadísticas se normalizan por 90 minutos.</div>", unsafe_allow_html=True)
 
     c1, c2 = st.columns(2)
     with c1:
@@ -1347,17 +1357,16 @@ elif menu == "Cara a Cara":
         if mins == 0:
             return None
         q_col = 'Quites (Tackles)' if 'Quites (Tackles)' in data.columns else 'Quites'
-        duelos = data['Duelos (Gan/Tot)'].apply(extraer_duelos).sum() if 'Duelos (Gan/Tot)' in data.columns else 0
+        duelos  = data['Duelos (Gan/Tot)'].apply(extraer_duelos).sum() if 'Duelos (Gan/Tot)' in data.columns else 0
         regates = data['Regates (Exit/Tot)'].apply(extraer_duelos).sum() if 'Regates (Exit/Tot)' in data.columns else 0
         efect_pases = data['Efectividad Pases'].replace(0, np.nan).mean()
         efect_pases = efect_pases if not pd.isna(efect_pases) else 0
         return {
-            'Mins': mins,
-            'Partidos': data['Nota SofaScore'].count(),
+            'Mins': mins, 'Partidos': data['Nota SofaScore'].count(),
             'Nota': data['Nota SofaScore'].mean(),
-            'Goles':   (data['Goles'].sum() / mins * 90),
-            'Asist':   (data['Asistencias'].sum() / mins * 90),
-            'KP':      (data['Pases Clave'].sum() / mins * 90),
+            'Goles':  (data['Goles'].sum() / mins * 90),
+            'Asist':  (data['Asistencias'].sum() / mins * 90),
+            'KP':     (data['Pases Clave'].sum() / mins * 90),
             'Efect_Pases': efect_pases,
             'Regates': (regates / mins * 90),
             'Duelos':  (duelos / mins * 90),
@@ -1370,7 +1379,6 @@ elif menu == "Cara a Cara":
 
     if s_a and s_b:
         st.markdown("<hr style='margin:24px 0;'>", unsafe_allow_html=True)
-
         st.markdown("<div class='section-title'>📊 COMPARACIÓN GENERAL</div>", unsafe_allow_html=True)
         col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
 
@@ -1395,7 +1403,6 @@ elif menu == "Cara a Cara":
             st.metric("Pases Clave P90 ", f"{s_b['KP']:.2f}", delta=delta_fmt(s_b['KP'], s_a['KP']))
 
         st.markdown("<br>", unsafe_allow_html=True)
-
         st.markdown("<div class='section-title'>🛡️ PERFILES TÁCTICOS</div>", unsafe_allow_html=True)
 
         mets = ['Goles', 'Asist', 'KP', 'Efect_Pases', 'Regates', 'Duelos', 'Quites', 'Inter']
@@ -1410,22 +1417,22 @@ elif menu == "Cara a Cara":
             d_tot = df_t['Duelos (Gan/Tot)'].apply(extraer_duelos) if 'Duelos (Gan/Tot)' in df_t.columns else pd.Series(0, index=df_t.index)
             r_tot = df_t['Regates (Exit/Tot)'].apply(extraer_duelos) if 'Regates (Exit/Tot)' in df_t.columns else pd.Series(0, index=df_t.index)
             df_t = df_t.copy()
-            df_t['_duelos'] = d_tot.values
+            df_t['_duelos']  = d_tot.values
             df_t['_regates'] = r_tot.values
-            tg = df_t.groupby('Jugador').agg({'Goles':'sum','Asistencias':'sum','Pases Clave':'sum',
-                                              'Intercepciones':'sum','Minutos':'sum',
-                                              'Efectividad Pases':'mean','_duelos':'sum','_regates':'sum'})
+            tg = df_t.groupby('Jugador').agg({'Goles': 'sum', 'Asistencias': 'sum', 'Pases Clave': 'sum',
+                'Intercepciones': 'sum', 'Minutos': 'sum', 'Efectividad Pases': 'mean',
+                '_duelos': 'sum', '_regates': 'sum'})
             tg[q_c] = df_t.groupby('Jugador')[q_c].sum()
             tg_valid = tg[tg['Minutos'] >= 300] if len(tg[tg['Minutos'] >= 300]) > 0 else tg
             mins_safe = tg_valid['Minutos'].replace(0, 1)
             return [
-                ((tg_valid['Goles']        / mins_safe) * 90).fillna(0).max(),
-                ((tg_valid['Asistencias']  / mins_safe) * 90).fillna(0).max(),
-                ((tg_valid['Pases Clave']  / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid['Goles']         / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid['Asistencias']   / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid['Pases Clave']   / mins_safe) * 90).fillna(0).max(),
                 tg_valid['Efectividad Pases'].replace(0, np.nan).max() or 95.0,
-                ((tg_valid['_regates']     / mins_safe) * 90).fillna(0).max(),
-                ((tg_valid['_duelos']      / mins_safe) * 90).fillna(0).max(),
-                ((tg_valid[q_c]            / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid['_regates']      / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid['_duelos']       / mins_safe) * 90).fillna(0).max(),
+                ((tg_valid[q_c]             / mins_safe) * 90).fillna(0).max(),
                 ((tg_valid['Intercepciones']/ mins_safe) * 90).fillna(0).max(),
             ]
 
@@ -1435,8 +1442,7 @@ elif menu == "Cara a Cara":
 
         def norm_vals(stats, maximos):
             vals = [stats[m] for m in mets]
-            normed = [(v / m * 100) if m > 0 else 0 for v, m in zip(vals, maximos)]
-            return [min(n, 100) for n in normed], vals 
+            return [min((v / m * 100) if m > 0 else 0, 100) for v, m in zip(vals, maximos)], vals
 
         vals_j1_norm, vals_j1_raw = norm_vals(s_a, mx_global)
         vals_j2_norm, vals_j2_raw = norm_vals(s_b, mx_global)
@@ -1449,80 +1455,56 @@ elif menu == "Cara a Cara":
 
         fig_radar = go.Figure()
         fig_radar.add_trace(go.Scatterpolar(
-            r=vals_j1_norm + [vals_j1_norm[0]],
-            theta=labs + [labs[0]],
-            fill='toself',
-            fillcolor='rgba(208,2,27,0.2)',
-            line=dict(color='#D0021B', width=3),
-            marker=dict(color='#D0021B', size=7),
-            name=f"{j_a} ({t_a})",
-            hoverinfo='text', text=text_j1,
+            r=vals_j1_norm + [vals_j1_norm[0]], theta=labs + [labs[0]],
+            fill='toself', fillcolor='rgba(208,2,27,0.2)',
+            line=dict(color='#D0021B', width=3), marker=dict(color='#D0021B', size=7),
+            name=f"{j_a} ({t_a})", hoverinfo='text', text=text_j1,
         ))
         fig_radar.add_trace(go.Scatterpolar(
-            r=vals_j2_norm + [vals_j2_norm[0]],
-            theta=labs + [labs[0]],
-            fill='toself',
-            fillcolor='rgba(55,65,81,0.18)',
-            line=dict(color='#374151', width=3),
-            marker=dict(color='#374151', size=7),
-            name=f"{j_b} ({t_b})",
-            hoverinfo='text', text=text_j2,
+            r=vals_j2_norm + [vals_j2_norm[0]], theta=labs + [labs[0]],
+            fill='toself', fillcolor='rgba(55,65,81,0.18)',
+            line=dict(color='#374151', width=3), marker=dict(color='#374151', size=7),
+            name=f"{j_b} ({t_b})", hoverinfo='text', text=text_j2,
         ))
         fig_radar.update_layout(
-            polar=dict(
-                bgcolor="rgba(249,250,251,1)",
-                radialaxis=dict(
-                    visible=True, range=[0, 100],
-                    showticklabels=True,
-                    tickvals=[25, 50, 75, 100],
+            polar=dict(bgcolor="rgba(249,250,251,1)",
+                radialaxis=dict(visible=True, range=[0, 100], tickvals=[25, 50, 75, 100],
                     ticktext=['25%', '50%', '75%', '100%'],
                     tickfont=dict(size=9, color='#9CA3AF', family='Rajdhani'),
-                    gridcolor="#E5E7EB", linecolor="#E5E7EB",
-                ),
-                angularaxis=dict(
-                    tickfont=dict(size=12, family="Rajdhani", color="#374151"),
-                    gridcolor="#E5E7EB", linecolor="#E5E7EB",
-                ),
-            ),
+                    gridcolor="#E5E7EB", linecolor="#E5E7EB"),
+                angularaxis=dict(tickfont=dict(size=12, family="Rajdhani", color="#374151"),
+                    gridcolor="#E5E7EB", linecolor="#E5E7EB")),
             showlegend=True,
-            legend=dict(
-                orientation="h", yanchor="bottom", y=-0.18, xanchor="center", x=0.5,
+            legend=dict(orientation="h", yanchor="bottom", y=-0.18, xanchor="center", x=0.5,
                 font=dict(size=14, family="Rajdhani", color="#111827"),
-                bgcolor="rgba(255,255,255,0.9)", bordercolor="#E5E7EB", borderwidth=1,
-            ),
-            paper_bgcolor="rgba(0,0,0,0)",
-            margin=dict(l=80, r=80, t=20, b=80),
-            height=560,
+                bgcolor="rgba(255,255,255,0.9)", bordercolor="#E5E7EB", borderwidth=1),
+            paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=80, r=80, t=20, b=80), height=560,
         )
         st.plotly_chart(fig_radar, use_container_width=True)
-        st.markdown("<div class='info-box'>El área cubre el % respecto al máximo global entre ambas temporadas. 100% = el mejor de todos los jugadores con ≥300 min en esa métrica.</div>", unsafe_allow_html=True)
+        st.markdown("<div class='info-box'>100% = el mejor de todos los jugadores con ≥300 min en esa métrica (entre ambas temporadas).</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
         datos_tabla = pd.DataFrame({
             'Métrica': ['Partidos', 'Minutos', 'Nota SofaScore', 'Goles (P90)', 'Asistencias (P90)',
                         'Pases Clave (P90)', 'Efect. Pases %', 'Regates (P90)',
                         'Duelos Ganados (P90)', 'Quites (P90)', 'Intercepciones (P90)'],
-            f'{j_a} ({t_a})': [
-                int(s_a['Partidos']), int(s_a['Mins']), f"{s_a['Nota']:.2f}",
+            f'{j_a} ({t_a})': [int(s_a['Partidos']), int(s_a['Mins']), f"{s_a['Nota']:.2f}",
                 f"{s_a['Goles']:.3f}", f"{s_a['Asist']:.3f}", f"{s_a['KP']:.3f}",
                 f"{s_a['Efect_Pases']:.1f}%", f"{s_a['Regates']:.3f}",
-                f"{s_a['Duelos']:.3f}", f"{s_a['Quites']:.3f}", f"{s_a['Inter']:.3f}",
-            ],
-            f'{j_b} ({t_b})': [
-                int(s_b['Partidos']), int(s_b['Mins']), f"{s_b['Nota']:.2f}",
+                f"{s_a['Duelos']:.3f}", f"{s_a['Quites']:.3f}", f"{s_a['Inter']:.3f}"],
+            f'{j_b} ({t_b})': [int(s_b['Partidos']), int(s_b['Mins']), f"{s_b['Nota']:.2f}",
                 f"{s_b['Goles']:.3f}", f"{s_b['Asist']:.3f}", f"{s_b['KP']:.3f}",
                 f"{s_b['Efect_Pases']:.1f}%", f"{s_b['Regates']:.3f}",
-                f"{s_b['Duelos']:.3f}", f"{s_b['Quites']:.3f}", f"{s_b['Inter']:.3f}",
-            ],
+                f"{s_b['Duelos']:.3f}", f"{s_b['Quites']:.3f}", f"{s_b['Inter']:.3f}"],
         })
         st.dataframe(datos_tabla, hide_index=True, use_container_width=True)
 
-# ─── HISTORIAL GENERAL (NUEVO EN HERRAMIENTAS) ────────────────────────────────
+# ─── HISTORIAL GENERAL ────────────────────────────────────────────────────────
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
-    
+
     df_historial = generar_historial_completo()
-    
+
     if df_historial.empty:
         st.info("No hay datos suficientes para armar el historial general.")
     else:
@@ -1531,56 +1513,43 @@ elif menu == "Historial General":
         total_pe = df_historial['PE'].sum()
         total_pp = df_historial['PP'].sum()
         efectividad = (total_pg * 3 + total_pe) / (total_pj * 3) * 100 if total_pj > 0 else 0
-        
+
         c1, c2, c3, c4, c5 = st.columns(5)
         c1.metric("Total Partidos Registrados", int(total_pj))
         c2.metric("Victorias Históricas", int(total_pg))
         c3.metric("Empates Históricos", int(total_pe))
         c4.metric("Derrotas Históricas", int(total_pp))
         c5.metric("Efectividad Histórica", f"{efectividad:.1f}%")
-        
+
         st.markdown("<br>", unsafe_allow_html=True)
-        
         c_graf, c_tabla = st.columns([1.5, 1])
-        
+
         with c_graf:
             st.markdown("<div class='section-title'>📊 EFECTIVIDAD HISTÓRICA POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
-            
             fig_hist = go.Figure()
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PG'], 
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PG'],
                 name='Ganados', orientation='h', marker=dict(color='#22C55E'),
-                text=df_hist_graf['PG'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PE'], 
+                text=df_hist_graf['PG'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PE'],
                 name='Empatados', orientation='h', marker=dict(color='#9CA3AF'),
-                text=df_hist_graf['PE'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            fig_hist.add_trace(go.Bar(
-                y=df_hist_graf['Rival'], x=df_hist_graf['PP'], 
+                text=df_hist_graf['PE'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
+            fig_hist.add_trace(go.Bar(y=df_hist_graf['Rival'], x=df_hist_graf['PP'],
                 name='Perdidos', orientation='h', marker=dict(color='#EF4444'),
-                text=df_hist_graf['PP'].replace(0, ''), textposition='inside', textfont=dict(color='white', family='Bebas Neue')
-            ))
-            
+                text=df_hist_graf['PP'].replace(0, ''), textposition='inside',
+                textfont=dict(color='white', family='Bebas Neue')))
             apply_plotly_style(fig_hist, xaxis_title="Cantidad de Partidos", yaxis_title="")
-            fig_hist.update_layout(
-                barmode='stack',
-                height=max(400, len(df_hist_graf) * 35),
-                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-            )
+            fig_hist.update_layout(barmode='stack', height=max(400, len(df_hist_graf) * 35),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1))
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos por penales se contabilizan como <b>Empate</b>.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
-            st.dataframe(
-                df_historial[['Rival', 'PJ', 'PG', 'PE', 'PP', 'GF', 'GC', 'DIF']],
-                hide_index=True,
-                use_container_width=True,
-                height=800
-            )
+            st.dataframe(df_historial[['Rival', 'PJ', 'PG', 'PE', 'PP', 'GF', 'GC', 'DIF']],
+                hide_index=True, use_container_width=True, height=800)
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown("""
