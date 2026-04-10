@@ -850,6 +850,7 @@ elif menu == "Mercado de Pases":
             df_bajas = df_mercado[df_mercado['alta o baja'] == 'Baja'].copy()
             
             # --- MOTOR HTML ESTILO FOOTBALL MANAGER ---
+          # --- MOTOR HTML ESTILO FOOTBALL MANAGER ---
             def generar_tabla_fm(df, tipo):
                 if df.empty:
                     return "<div style='padding: 20px; text-align: center; color: #6B7280; font-family: Inter; border: 1px dashed #E5E7EB; border-radius: 8px;'>No hay registros en este periodo.</div>"
@@ -857,36 +858,33 @@ elif menu == "Mercado de Pases":
                 # Rojo si compramos (gasto), Verde si vendemos (ingreso)
                 color_coste = "#D0021B" if tipo == "Alta" else "#22C55E" 
                 
-                html = f"""
-                <style>
-                .fm-table-{tipo} {{ width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }}
-                .fm-table-{tipo} th {{ background-color: #111827; color: #9CA3AF; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; padding: 12px 16px; text-align: left; font-weight: 600; }}
-                .fm-table-{tipo} th.right {{ text-align: right; }}
-                .fm-table-{tipo} td {{ padding: 12px 16px; border-bottom: 1px solid #F3F4F6; color: #1F2937; background-color: #FFFFFF; transition: background-color 0.2s; }}
-                .fm-table-{tipo} tr:last-child td {{ border-bottom: none; }}
-                .fm-table-{tipo} tr:hover td {{ background-color: #F9FAFB; }}
-                .fm-player {{ font-weight: 600; color: #111827; font-size: 14px; }}
-                .fm-club {{ color: #4B5563; font-size: 12px; margin-top: 2px; }}
-                .fm-cost {{ font-family: 'Rajdhani', sans-serif; font-weight: 700; text-align: right; color: {color_coste}; font-size: 14px; letter-spacing: 0.5px; }}
-                </style>
-                <table class="fm-table-{tipo}">
-                    <thead>
-                        <tr>
-                            <th>Jugador</th>
-                            <th>{ "Procedencia" if tipo == "Alta" else "Destino" }</th>
-                            <th class="right">Condición / Coste</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                """
+                # SIN INDENTACIÓN para que Streamlit no lo convierta en bloque de texto
+                html = f"""<style>
+.fm-table-{tipo} {{ width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }}
+.fm-table-{tipo} th {{ background-color: #111827; color: #9CA3AF; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; padding: 12px 16px; text-align: left; font-weight: 600; }}
+.fm-table-{tipo} th.right {{ text-align: right; }}
+.fm-table-{tipo} td {{ padding: 12px 16px; border-bottom: 1px solid #F3F4F6; color: #1F2937; background-color: #FFFFFF; transition: background-color 0.2s; }}
+.fm-table-{tipo} tr:last-child td {{ border-bottom: none; }}
+.fm-table-{tipo} tr:hover td {{ background-color: #F9FAFB; }}
+.fm-player {{ font-weight: 600; color: #111827; font-size: 14px; }}
+.fm-club {{ color: #4B5563; font-size: 12px; margin-top: 2px; }}
+.fm-cost {{ font-family: 'Rajdhani', sans-serif; font-weight: 700; text-align: right; color: {color_coste}; font-size: 14px; letter-spacing: 0.5px; }}
+</style>
+<table class="fm-table-{tipo}">
+<thead>
+<tr>
+<th>Jugador</th>
+<th>{"Procedencia" if tipo == "Alta" else "Destino"}</th>
+<th class="right">Condición / Coste</th>
+</tr>
+</thead>
+<tbody>"""
                 for _, row in df.iterrows():
-                    html += f"""
-                        <tr>
-                            <td><div class="fm-player">{row['nombre']}</div></td>
-                            <td><div class="fm-club">{row['club final']}</div></td>
-                            <td class="right"><div class="fm-cost">{row['coste']}</div></td>
-                        </tr>
-                    """
+                    html += f"""<tr>
+<td><div class="fm-player">{row['nombre']}</div></td>
+<td><div class="fm-club">{row['club final']}</div></td>
+<td class="right"><div class="fm-cost">{row['coste']}</div></td>
+</tr>"""
                 html += "</tbody></table>"
                 return html
 
@@ -900,9 +898,6 @@ elif menu == "Mercado de Pases":
             with c_bajas:
                 st.markdown("<div class='section-title' style='color:#EF4444; font-size: 22px;'>🔴 BAJAS (SALIDAS)</div>", unsafe_allow_html=True)
                 st.markdown(generar_tabla_fm(df_bajas, "Baja"), unsafe_allow_html=True)
-                
-        except ValueError:
-            st.info(f"No hay datos de mercado registrados para la temporada {temporada_sel}.")
 
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
 elif menu == "Historial":
