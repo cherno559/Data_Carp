@@ -274,6 +274,30 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
     except:
         return None
 
+# ✅ SOLUCIÓN AL ERROR DE ESTADÍSTICAS DE EQUIPO
+@st.cache_data
+def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
+    try:
+        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
+        row_idx, col_idx = None, None
+        for r in range(min(120, len(df))):
+            for c in range(min(15, len(df.columns))):
+                val = str(df.iloc[r, c]).strip().lower()
+                if val in ['métrica', 'metrica']:
+                    row_idx, col_idx = r, c
+                    break
+            if row_idx is not None: break
+        if row_idx is not None:
+            df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
+            df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
+            df_team = df_team.dropna(subset=[df_team.columns[0]])
+            df_team = df_team[df_team[df_team.columns[0]].astype(str).str.strip() != '']
+            df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
+            return df_team
+        return pd.DataFrame()
+    except:
+        return pd.DataFrame()
+
 @st.cache_data
 def extraer_info_partido(ruta_excel_str, nombre_hoja):
     try:
@@ -494,7 +518,6 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        # ✅ "Mercado de Pases" agregado aquí
         menu = st.radio("", ["Resumen General", "Mercado de Pases", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
@@ -520,7 +543,6 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
-# Solo cargar df_raw si no estamos en Mercado de Pases
 if menu != "Mercado de Pases":
     df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
     if estado != "OK":
@@ -649,7 +671,7 @@ elif menu == "Mercado de Pases":
         st.error("⚠️ No se encontró el archivo Mercado_de_Pases_River.xlsx en la carpeta de la app.")
         st.stop()
 
-    df_mp = df_mp_full[df_mp_full['Temporada'] == temporada_sel].copy()
+    df_mp = df_mp_full[df_mp_full['Temporada'] == str(temporada_sel)].copy()
 
     if df_mp.empty:
         st.warning(f"No hay datos de mercado de pases para la temporada {temporada_sel}.")
@@ -658,7 +680,6 @@ elif menu == "Mercado de Pases":
     altas = df_mp[df_mp['tipo'] == 'Alta']
     bajas = df_mp[df_mp['tipo'] == 'Baja']
 
-    # KPIs
     ingresos  = bajas['valor_mill'].sum()
     gastos    = altas['valor_mill'].sum()
     balance   = ingresos - gastos
@@ -679,7 +700,7 @@ elif menu == "Mercado de Pases":
         "📊 Resumen Visual", "🟢 Altas Detalladas", "🔴 Bajas Detalladas", "📈 Histórico Multi-Temporada"
     ])
 
-    # ── TAB 1: RESUMEN VISUAL ─────────────────────────────────────────────────
+    # ── TAB 1: RESUMEN VISUAL
     with tab_resumen:
         col_pie, col_bar = st.columns([1, 1.6])
 
@@ -760,7 +781,6 @@ elif menu == "Mercado de Pases":
             else:
                 st.info("No hay movimientos con valor económico en esta temporada.")
 
-        # Tabla de resumen económico
         st.markdown("<div class='section-title' style='font-size:20px;'>📋 RESUMEN ECONÓMICO DE LA TEMPORADA</div>", unsafe_allow_html=True)
         resumen_data = {
             'Indicador': [
@@ -792,7 +812,7 @@ elif menu == "Mercado de Pases":
         }
         st.dataframe(pd.DataFrame(resumen_data), hide_index=True, use_container_width=True)
 
-    # ── TAB 2: ALTAS ──────────────────────────────────────────────────────────
+    # ── TAB 2: ALTAS
     with tab_altas_t:
         st.markdown(f"<div class='section-title'>🟢 INCORPORACIONES · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
         st.markdown("<div class='info-box'>Todos los jugadores que llegaron al club en esta temporada. Ordenados por valor de operación y tipo.</div>", unsafe_allow_html=True)
@@ -831,7 +851,7 @@ elif menu == "Mercado de Pases":
         df_altas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Coste', 'Club de Procedencia']
         st.dataframe(df_altas_display, hide_index=False, use_container_width=True, height=460)
 
-    # ── TAB 3: BAJAS ──────────────────────────────────────────────────────────
+    # ── TAB 3: BAJAS
     with tab_bajas_t:
         st.markdown(f"<div class='section-title'>🔴 SALIDAS · TEMPORADA {temporada_sel}</div>", unsafe_allow_html=True)
         st.markdown("<div class='info-box'>Todos los jugadores que dejaron el club, con su destino y el ingreso generado para River Plate.</div>", unsafe_allow_html=True)
@@ -870,13 +890,16 @@ elif menu == "Mercado de Pases":
         df_bajas_display.columns = ['Jugador', 'Tipo de Operación', 'Detalle del Ingreso', 'Club de Destino']
         st.dataframe(df_bajas_display, hide_index=False, use_container_width=True, height=460)
 
-    # ── TAB 4: HISTÓRICO ──────────────────────────────────────────────────────
+    # ── TAB 4: HISTÓRICO (ORDENADO CRONOLÓGICAMENTE)
     with tab_historico:
         st.markdown("<div class='section-title'>📈 EVOLUCIÓN HISTÓRICA DEL MERCADO</div>", unsafe_allow_html=True)
         st.markdown("<div class='info-box'>Comparativa de todas las temporadas: inversiones, ingresos y balance neto. Los valores reflejan sólo operaciones con coste económico declarado.</div>", unsafe_allow_html=True)
 
+        # ✅ ORDENAMIENTO POR AÑO CALENDARIO 
+        temporadas_ordenadas = sorted(df_mp_full['Temporada'].unique(), key=lambda x: int(x))
+        
         resumen_historico = []
-        for temp in sorted(df_mp_full['Temporada'].unique()):
+        for temp in temporadas_ordenadas:
             df_t = df_mp_full[df_mp_full['Temporada'] == temp]
             resumen_historico.append({
                 'Temporada': temp,
@@ -1217,9 +1240,42 @@ elif menu == "Estadísticas de Equipo":
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
 
-    # Nota: extraer_estadisticas_equipo no estaba definida en el código original
-    # Se deja el placeholder para que el usuario la implemente
-    st.info("ℹ️ La función de estadísticas de equipo requiere definir `extraer_estadisticas_equipo`. Implementar según estructura del Excel.")
+    # ✅ AHORA SÍ USA LA FUNCIÓN INTEGRADA
+    df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
+    
+    if not df_equipo.empty:
+        try:
+            cols = df_equipo.columns.tolist()
+            metrica_col = cols[0]
+            local_col   = cols[1]
+            rival_col   = cols[2]
+            df_equipo[local_col] = pd.to_numeric(df_equipo[local_col], errors='coerce')
+            df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col], errors='coerce')
+            df_num = df_equipo.dropna(subset=[local_col, rival_col])
+
+            if not df_num.empty:
+                fig_eq = go.Figure()
+                fig_eq.add_trace(go.Bar(
+                    name=str(local_col), x=df_num[metrica_col], y=df_num[local_col],
+                    marker_color='#D0021B',
+                    hovertemplate="%{x}<br>" + str(local_col) + ": %{y}<extra></extra>",
+                ))
+                fig_eq.add_trace(go.Bar(
+                    name=str(rival_col), x=df_num[metrica_col], y=df_num[rival_col],
+                    marker_color='#374151',
+                    hovertemplate="%{x}<br>" + str(rival_col) + ": %{y}<extra></extra>",
+                ))
+                apply_plotly_style(fig_eq, title="COMPARATIVA DE MÉTRICAS")
+                fig_eq.update_layout(
+                    barmode='group', height=360,
+                    xaxis=dict(tickangle=-25),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                )
+                st.plotly_chart(fig_eq, use_container_width=True)
+        except Exception:
+            pass
+
+        st.dataframe(df_equipo, hide_index=True, use_container_width=True)
 
 # ─── ESTADÍSTICAS INDIVIDUALES ────────────────────────────────────────────────
 elif menu == "Estadísticas Individuales":
@@ -1248,14 +1304,14 @@ elif menu == "Estadísticas Individuales":
             df_p[c] = pd.to_numeric(df_p[c], errors='coerce').fillna(0)
 
     categorias_ind = {
-        "⭐ Nota SofaScore":    ("Nota SofaScore",    ['Jugador', 'Nota SofaScore']),
-        "🛡️ Quites":            ("Quites",             ['Jugador', 'Quites']),
-        "🛑 Intercepciones":    ("Intercepciones",     ['Jugador', 'Intercepciones']),
-        "⚔️ Duelos Ganados":    ("Duelos Ganados",     ['Jugador', 'Duelos Ganados', 'Efectividad Duelos']),
-        "🎯 Pases Completados": ("Pases Completados",  ['Jugador', 'Pases Completados', 'Efectividad Pases']),
-        "🔑 Pases Clave":       ("Pases Clave",        ['Jugador', 'Pases Clave']),
-        "⚡ Regates Exitosos":  ("Regates Exitosos",   ['Jugador', 'Regates Exitosos']),
-        "👟 Tiros al Arco":     ("Tiros al Arco",      ['Jugador', 'Tiros al Arco']),
+        "⭐ Nota SofaScore":      ("Nota SofaScore",       ['Jugador', 'Nota SofaScore']),
+        "🛡️ Quites":              ("Quites",                ['Jugador', 'Quites']),
+        "🛑 Intercepciones":      ("Intercepciones",        ['Jugador', 'Intercepciones']),
+        "⚔️ Duelos Ganados":      ("Duelos Ganados",        ['Jugador', 'Duelos Ganados', 'Efectividad Duelos']),
+        "🎯 Pases Completados":   ("Pases Completados",     ['Jugador', 'Pases Completados', 'Efectividad Pases']),
+        "🔑 Pases Clave":         ("Pases Clave",           ['Jugador', 'Pases Clave']),
+        "⚡ Regates Exitosos":    ("Regates Exitosos",      ['Jugador', 'Regates Exitosos']),
+        "👟 Tiros al Arco":       ("Tiros al Arco",         ['Jugador', 'Tiros al Arco']),
     }
 
     cols_grid = st.columns(2)
