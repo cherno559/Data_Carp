@@ -58,11 +58,12 @@ def cargar_datos_completos(ruta_excel):
             if hoja in hojas_omitir: continue
             df = pd.read_excel(ruta_excel, sheet_name=hoja)
             
-            # 🔥 ESCUDO ANTI-ERRORES: Convertimos las columnas a texto antes de limpiar
+            # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos las columnas a texto antes de limpiar
             df.columns = df.columns.astype(str).str.strip()
             
             if 'Jugador' in df.columns and 'Nota SofaScore' in df.columns:
-                # 🔥 ESCUDO ANTI-ERRORES: Convertimos la columna Jugador a texto antes de limpiar
+                
+                # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos la columna Jugador a texto antes de limpiar
                 df['Jugador'] = df['Jugador'].astype(str).str.strip()
                 
                 df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
@@ -246,6 +247,7 @@ if menu == "Resumen General":
     
     st.subheader("📊 Promedios SofaScore")
     df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+    
     st.dataframe(df_promedios, hide_index=True, use_container_width=True)
     st.divider()
     
@@ -389,7 +391,7 @@ elif menu == "Mapa de Tiros":
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =============================================================================
-# 9. HERRAMIENTAS: CARA A CARA (P90 - FILTRO 300 MINS)
+# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO P90)
 # =============================================================================
 
 elif menu == "Cara a Cara":
@@ -422,14 +424,20 @@ elif menu == "Cara a Cara":
     with c1:
         st.markdown("### 🔴 Jugador 1")
         t_a = st.selectbox("Temporada:", anios_disponibles, key="ta")
-        jugadores_a = sorted(df_todas_temporadas[df_todas_temporadas['Temporada'] == t_a]['Jugador'].unique())
-        j_a = st.selectbox("Jugador:", jugadores_a, key="ja")
+        # 🔥 FILTRO 300 MINUTOS APLICADO AL SELECTOR
+        df_anio_a = df_todas_temporadas[df_todas_temporadas['Temporada'] == t_a]
+        mins_a = df_anio_a.groupby('Jugador')['Minutos'].sum()
+        jugadores_a_validos = sorted(mins_a[mins_a >= 300].index.tolist())
+        j_a = st.selectbox("Jugador:", jugadores_a_validos, key="ja")
         
     with c2:
         st.markdown("### ⚪ Jugador 2")
         t_b = st.selectbox("Temporada:", anios_disponibles, key="tb")
-        jugadores_b = sorted(df_todas_temporadas[df_todas_temporadas['Temporada'] == t_b]['Jugador'].unique())
-        j_b = st.selectbox("Jugador:", jugadores_b, key="jb")
+        # 🔥 FILTRO 300 MINUTOS APLICADO AL SELECTOR
+        df_anio_b = df_todas_temporadas[df_todas_temporadas['Temporada'] == t_b]
+        mins_b = df_anio_b.groupby('Jugador')['Minutos'].sum()
+        jugadores_b_validos = sorted(mins_b[mins_b >= 300].index.tolist())
+        j_b = st.selectbox("Jugador:", jugadores_b_validos, key="jb")
 
     if j_a and j_b:
         def extraer_duelos(valor):
@@ -527,15 +535,14 @@ elif menu == "Cara a Cara":
                 tg['Quites'] = df_temp.groupby('Jugador')[q_c].sum()
                 tg['Minutos_Safe'] = tg['Minutos'].replace(0, 1)
                 
-                # 🔥 FILTRO ANTI-ANOMALÍAS: Exigimos al menos 300 mins para definir los techos del radar
-                tg_p90 = tg[tg['Minutos'] >= 300]
+                tg_p90 = tg[tg['Minutos'] >= 180]
                 if tg_p90.empty: tg_p90 = tg 
                 
                 return [
                     ((tg_p90['Goles']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Asistencias']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Pases Clave']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
-                    95.0, # Tope fijo 95% para pases para no aplastar el gráfico
+                    95.0, # Tope fijo para pases
                     ((tg_p90['Regates_Exitosos']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Duelos_Ganados']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Quites']/tg_p90['Minutos_Safe'])*90).fillna(0).max(), 
@@ -561,6 +568,7 @@ elif menu == "Cara a Cara":
             valores_j2_norm = [(v / m_val * 100) if m_val and m_val > 0 else 0 for v, m_val in zip(valores_j2, mx_global)]
             text_j2 = [f"{labs[i]}: {format_hover(valores_j2[i], i)}" for i in range(len(labs))] + [f"{labs[0]}: {format_hover(valores_j2[0], 0)}"]
 
+            # Trazo Jugador 1 (Rojo)
             fig_radar_comparativo.add_trace(go.Scatterpolar(
                 r=valores_j1_norm + [valores_j1_norm[0]],
                 theta=labs + [labs[0]],
@@ -573,6 +581,7 @@ elif menu == "Cara a Cara":
                 text=text_j1
             ))
             
+            # Trazo Jugador 2 (Gris)
             fig_radar_comparativo.add_trace(go.Scatterpolar(
                 r=valores_j2_norm + [valores_j2_norm[0]],
                 theta=labs + [labs[0]],
