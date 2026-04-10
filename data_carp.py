@@ -593,14 +593,35 @@ elif menu == "Cara a Cara":
         st.subheader("🛡️ Comparación de Perfiles Tácticos")
         
         metrics_radar = ['Goles', 'Asistencias', 'Pases_Clave', 'Quites', 'Intercepciones']
-        labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
+        labels_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (P90)', 'Intercep. (P90)']
         
+        # Calcular P90 para Quites e Intercepciones
+        mins1 = float(datos_j1['Minutos']) if float(datos_j1['Minutos']) > 0 else 1
+        mins2 = float(datos_j2['Minutos']) if float(datos_j2['Minutos']) > 0 else 1
+
+        quites_p90_j1 = (float(datos_j1['Quites']) / mins1) * 90
+        intercep_p90_j1 = (float(datos_j1['Intercepciones']) / mins1) * 90
+
+        quites_p90_j2 = (float(datos_j2['Quites']) / mins2) * 90
+        intercep_p90_j2 = (float(datos_j2['Intercepciones']) / mins2) * 90
+
         # Valores de cada jugador
-        valores_j1 = [float(datos_j1[m]) for m in metrics_radar]
-        valores_j2 = [float(datos_j2[m]) for m in metrics_radar]
+        valores_j1 = [float(datos_j1['Goles']), float(datos_j1['Asistencias']), float(datos_j1['Pases_Clave']), quites_p90_j1, intercep_p90_j1]
+        valores_j2 = [float(datos_j2['Goles']), float(datos_j2['Asistencias']), float(datos_j2['Pases_Clave']), quites_p90_j2, intercep_p90_j2]
         
-        # Máximos globales para normalización
-        maximos_globales = [float(df_comparacion[m].max()) for m in metrics_radar]
+        # Máximos globales para normalización (calculando P90 para la escala)
+        df_comp_calc = df_comparacion.copy()
+        df_comp_calc['Minutos_Safe'] = df_comp_calc['Minutos'].replace(0, 1)
+        df_comp_calc['Quites_P90'] = (df_comp_calc['Quites'] / df_comp_calc['Minutos_Safe']) * 90
+        df_comp_calc['Intercep_P90'] = (df_comp_calc['Intercepciones'] / df_comp_calc['Minutos_Safe']) * 90
+
+        maximos_globales = [
+            float(df_comparacion['Goles'].max()),
+            float(df_comparacion['Asistencias'].max()),
+            float(df_comparacion['Pases_Clave'].max()),
+            float(df_comp_calc['Quites_P90'].max()),
+            float(df_comp_calc['Intercep_P90'].max())
+        ]
         
         # Normalizar a escala 0-100
         valores_j1_norm = [(v / m * 100) if m > 0 else 0 for v, m in zip(valores_j1, maximos_globales)]
@@ -609,6 +630,13 @@ elif menu == "Cara a Cara":
         # Crear gráfico de radar comparativo
         fig_radar_comparativo = go.Figure()
         
+        # Función para formatear el texto del hover (decimales solo para P90)
+        def format_hover(val, idx):
+            return f"{val:.2f}" if idx >= 3 else f"{int(val)}"
+
+        text_j1 = [f"{labels_radar[i]}: {format_hover(valores_j1[i], i)}" for i in range(len(labels_radar))] + [f"{labels_radar[0]}: {int(valores_j1[0])}"]
+        text_j2 = [f"{labels_radar[i]}: {format_hover(valores_j2[i], i)}" for i in range(len(labels_radar))] + [f"{labels_radar[0]}: {int(valores_j2[0])}"]
+
         # Jugador 1 (rojo)
         fig_radar_comparativo.add_trace(go.Scatterpolar(
             r=valores_j1_norm + [valores_j1_norm[0]],
@@ -619,8 +647,7 @@ elif menu == "Cara a Cara":
             marker=dict(color='#ed1c24', size=8),
             name=f"{jugador1} ({temp1})",
             hoverinfo='text',
-            text=[f"{labels_radar[i]}: {int(valores_j1[i])}" for i in range(len(labels_radar))] + 
-                 [f"{labels_radar[0]}: {int(valores_j1[0])}"]
+            text=text_j1
         ))
         
         # Jugador 2 (blanco/gris)
@@ -633,8 +660,7 @@ elif menu == "Cara a Cara":
             marker=dict(color='#808080', size=8),
             name=f"{jugador2} ({temp2})",
             hoverinfo='text',
-            text=[f"{labels_radar[i]}: {int(valores_j2[i])}" for i in range(len(labels_radar))] + 
-                 [f"{labels_radar[0]}: {int(valores_j2[0])}"]
+            text=text_j2
         ))
         
         fig_radar_comparativo.update_layout(
@@ -672,7 +698,7 @@ elif menu == "Cara a Cara":
         
         datos_tabla = pd.DataFrame({
             'Métrica': ['Promedio SofaScore', 'Partidos', 'Minutos', 'Goles', 'Asistencias', 
-                       'Pases Clave', 'Quites', 'Intercepciones', 'Tiros Totales', 'Efect. Pases %'],
+                       'Pases Clave', 'Quites (P90)', 'Intercepciones (P90)', 'Tiros Totales', 'Efect. Pases %'],
             f'{jugador1} ({temp1})': [
                 f"{datos_j1['Promedio']:.2f}",
                 int(datos_j1['Partidos']),
@@ -680,8 +706,8 @@ elif menu == "Cara a Cara":
                 int(datos_j1['Goles']),
                 int(datos_j1['Asistencias']),
                 int(datos_j1['Pases_Clave']),
-                int(datos_j1['Quites']),
-                int(datos_j1['Intercepciones']),
+                f"{quites_p90_j1:.2f}",
+                f"{intercep_p90_j1:.2f}",
                 int(datos_j1['Tiros_Totales']),
                 f"{datos_j1['Efectividad_Pases']:.1f}"
             ],
@@ -692,8 +718,8 @@ elif menu == "Cara a Cara":
                 int(datos_j2['Goles']),
                 int(datos_j2['Asistencias']),
                 int(datos_j2['Pases_Clave']),
-                int(datos_j2['Quites']),
-                int(datos_j2['Intercepciones']),
+                f"{quites_p90_j2:.2f}",
+                f"{intercep_p90_j2:.2f}",
                 int(datos_j2['Tiros_Totales']),
                 f"{datos_j2['Efectividad_Pases']:.1f}"
             ]
