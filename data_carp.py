@@ -400,6 +400,16 @@ h1.page-title {
     border-top: 1px solid var(--gray-200);
     margin-top: 48px;
 }
+
+/* Customización del selector horizontal de localía */
+div.row-widget.stRadio > div {
+    flex-direction: row;
+    gap: 20px;
+    background: var(--gray-50);
+    padding: 10px 15px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--gray-200);
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -556,12 +566,18 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
         return "Local", "Rival", "?", "?"
 
 @st.cache_data
-def generar_historial_rivales(ruta_excel_str, hojas):
-    """Genera la tabla de historial (W/D/L) leyendo todos los resultados de una temporada"""
+def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
+    """Genera la tabla de historial (W/D/L) leyendo todos los resultados de una temporada filtrando por condición"""
     historial = {}
     for hoja in hojas:
         local, rival, g_local, g_rival = extraer_info_partido(ruta_excel_str, hoja)
         if g_local == "?" or g_rival == "?": continue
+        
+        is_river_local = 'River' in local
+        
+        # Filtro de Localía
+        if condicion == "Local" and not is_river_local: continue
+        if condicion == "Visitante" and is_river_local: continue
         
         # Función interna para limpiar los penales y obtener los goles del partido
         def clean_goals(g_str):
@@ -571,7 +587,7 @@ def generar_historial_rivales(ruta_excel_str, hojas):
         gl = clean_goals(g_local)
         gv = clean_goals(g_rival)
         
-        if 'River' in local:
+        if is_river_local:
             equipo_rival = rival
             gf = gl
             gc = gv
@@ -599,8 +615,8 @@ def generar_historial_rivales(ruta_excel_str, hojas):
     return df_hist
 
 @st.cache_data
-def generar_historial_completo():
-    """Genera la tabla de historial combinando TODOS los archivos de TODAS las temporadas"""
+def generar_historial_completo(condicion="Total"):
+    """Genera la tabla de historial combinando TODOS los archivos filtrando por condición"""
     historial = {}
     for anio, ruta in temporadas_dict.items():
         try:
@@ -612,6 +628,12 @@ def generar_historial_completo():
                 local, rival, g_local, g_rival = extraer_info_partido(str(ruta), hoja)
                 if g_local == "?" or g_rival == "?": continue
                 
+                is_river_local = 'River' in local
+                
+                # Filtro de Localía
+                if condicion == "Local" and not is_river_local: continue
+                if condicion == "Visitante" and is_river_local: continue
+                
                 def clean_goals(g_str):
                     m = re.match(r'^(\d+)', str(g_str).strip())
                     return int(m.group(1)) if m else 0
@@ -619,7 +641,7 @@ def generar_historial_completo():
                 gl = clean_goals(g_local)
                 gv = clean_goals(g_rival)
                 
-                if 'River' in local:
+                if is_river_local:
                     equipo_rival = rival
                     gf = gl
                     gc = gv
@@ -708,7 +730,6 @@ with st.sidebar:
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
     else:
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        # 🔥 ACÁ SE AGREGÓ "Historial General" A LAS HERRAMIENTAS
         menu = st.radio("", ["Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -864,11 +885,15 @@ if menu == "Resumen General":
 elif menu == "Historial":
     page_header("📖", "HISTORIAL VS RIVALES", f"Temporada {temporada_sel}")
     
+    # 🔥 SELECTOR DE LOCALÍA
+    condicion_sel = st.radio("Condición:", ["Total", "Local", "Visitante"], horizontal=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
     hojas_unicas = df_raw.drop_duplicates('Partido')['Hoja_Original'].tolist()
-    df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas)
+    df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas, condicion_sel)
     
     if df_historial.empty:
-        st.info("No hay datos suficientes para armar el historial en esta temporada.")
+        st.info(f"No hay partidos registrados bajo la condición '{condicion_sel}' en esta temporada.")
     else:
         total_pj = df_historial['PJ'].sum()
         total_pg = df_historial['PG'].sum()
@@ -888,7 +913,7 @@ elif menu == "Historial":
         c_graf, c_tabla = st.columns([1.5, 1])
         
         with c_graf:
-            st.markdown("<div class='section-title'>📊 EFECTIVIDAD POR RIVAL</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>📊 RESULTADOS POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
             
             fig_hist = go.Figure()
@@ -915,7 +940,7 @@ elif menu == "Historial":
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b>.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
@@ -1521,10 +1546,14 @@ elif menu == "Cara a Cara":
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
     
-    df_historial = generar_historial_completo()
+    # 🔥 SELECTOR DE LOCALÍA
+    condicion_sel = st.radio("Condición:", ["Total", "Local", "Visitante"], horizontal=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    df_historial = generar_historial_completo(condicion_sel)
     
     if df_historial.empty:
-        st.info("No hay datos suficientes para armar el historial general.")
+        st.info(f"No hay partidos registrados bajo la condición '{condicion_sel}'.")
     else:
         total_pj = df_historial['PJ'].sum()
         total_pg = df_historial['PG'].sum()
@@ -1544,7 +1573,7 @@ elif menu == "Historial General":
         c_graf, c_tabla = st.columns([1.5, 1])
         
         with c_graf:
-            st.markdown("<div class='section-title'>📊 EFECTIVIDAD HISTÓRICA POR RIVAL</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>📊 RESULTADOS HISTÓRICOS POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
             
             fig_hist = go.Figure()
@@ -1571,7 +1600,7 @@ elif menu == "Historial General":
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b>.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
