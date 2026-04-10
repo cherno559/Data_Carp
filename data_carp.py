@@ -370,12 +370,12 @@ elif menu == "Mapa de Tiros":
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =============================================================================
-# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO - FILTRO P90)
+# 9. HERRAMIENTAS: CARA A CARA (P90 TOTAL)
 # =============================================================================
 
 elif menu == "Cara a Cara":
     st.markdown("<h1>⚔️ Comparación Cara a Cara</h1>", unsafe_allow_html=True)
-    st.markdown("Compará el rendimiento de dos jugadores de distintas temporadas")
+    st.markdown("Compará el rendimiento de dos jugadores de distintas temporadas (Estadísticas por cada 90 minutos)")
     
     # Cargar datos de todas las temporadas para los selectores
     @st.cache_data
@@ -441,7 +441,9 @@ elif menu == "Cara a Cara":
             
             return {
                 'Mins': mins, 'Partidos': partidos, 'Nota': data['Nota SofaScore'].mean(),
-                'Goles': data['Goles'].sum(), 'Asist': data['Asistencias'].sum(), 'KP': data['Pases Clave'].sum(),
+                'Goles': (data['Goles'].sum() / mins * 90), 
+                'Asist': (data['Asistencias'].sum() / mins * 90), 
+                'KP': (data['Pases Clave'].sum() / mins * 90),
                 'Efect_Pases': efect_pases,
                 'Regates': (regates_totales / mins * 90),
                 'Duelos': (duelos_totales / mins * 90),
@@ -468,19 +470,19 @@ elif menu == "Cara a Cara":
                 st.metric(label=f"{j_a}", value=int(s_a['Mins']))
                 st.metric(label=f"{j_b}", value=int(s_b['Mins']), delta=int(s_b['Mins'] - s_a['Mins']))
             with col_m3:
-                st.markdown(f"**Goles (Totales)**")
-                st.metric(label=f"{j_a}", value=int(s_a['Goles']))
-                st.metric(label=f"{j_b}", value=int(s_b['Goles']), delta=int(s_b['Goles'] - s_a['Goles']))
+                st.markdown(f"**Goles (P90)**")
+                st.metric(label=f"{j_a}", value=f"{s_a['Goles']:.2f}")
+                st.metric(label=f"{j_b}", value=f"{s_b['Goles']:.2f}", delta=f"{s_b['Goles'] - s_a['Goles']:.2f}")
             with col_m4:
-                st.markdown(f"**Asistencias (Totales)**")
-                st.metric(label=f"{j_a}", value=int(s_a['Asist']))
-                st.metric(label=f"{j_b}", value=int(s_b['Asist']), delta=int(s_b['Asist'] - s_a['Asist']))
+                st.markdown(f"**Asistencias (P90)**")
+                st.metric(label=f"{j_a}", value=f"{s_a['Asist']:.2f}")
+                st.metric(label=f"{j_b}", value=f"{s_b['Asist']:.2f}", delta=f"{s_b['Asist'] - s_a['Asist']:.2f}")
 
             st.markdown("---")
             st.subheader("🛡️ Comparación de Perfiles Tácticos")
             
             mets = ['Goles', 'Asist', 'KP', 'Efect_Pases', 'Regates', 'Duelos', 'Quites', 'Inter']
-            labs = ['Goles (Tot)', 'Asist (Tot)', 'Pases Clave (Tot)', 'Efect. Pases %', 'Regates (P90)', 'Duelos Gan (P90)', 'Quites (P90)', 'Intercep (P90)']
+            labs = ['Goles (P90)', 'Asist (P90)', 'Pases Clave (P90)', 'Efect. Pases %', 'Regates (P90)', 'Duelos Gan (P90)', 'Quites (P90)', 'Intercep (P90)']
             
             def get_max_mix(df, temporada):
                 df_t = df[df['Temporada'] == temporada].copy()
@@ -513,7 +515,9 @@ elif menu == "Cara a Cara":
                 if tg_p90.empty: tg_p90 = tg # Fallback por si la base recién empieza
                 
                 return [
-                    tg['Goles'].max(), tg['Asistencias'].max(), tg['Pases Clave'].max(), 
+                    ((tg_p90['Goles']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
+                    ((tg_p90['Asistencias']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
+                    ((tg_p90['Pases Clave']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     tg['Efectividad Pases'].fillna(0).max(),
                     ((tg_p90['Regates_Exitosos']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Duelos_Ganados']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
@@ -530,8 +534,7 @@ elif menu == "Cara a Cara":
             
             def format_hover(val, idx):
                 if idx == 3: return f"{val:.1f}%"
-                if idx > 3: return f"{val:.2f}"
-                return f"{int(val)}"
+                return f"{val:.2f}"
 
             valores_j1 = [s_a[m] for m in mets]
             valores_j1_norm = [(v / m_val * 100) if m_val and m_val > 0 else 0 for v, m_val in zip(valores_j1, mx_global)]
@@ -584,16 +587,16 @@ elif menu == "Cara a Cara":
             st.subheader("📋 Tabla Comparativa Detallada")
             
             datos_tabla = pd.DataFrame({
-                'Métrica': ['Partidos', 'Minutos', 'Nota SofaScore', 'Goles (Total)', 'Asistencias (Total)', 
-                           'Pases Clave (Total)', 'Efect. Pases %', 'Regates (P90)', 'Duelos Ganados (P90)', 'Quites (P90)', 'Intercepciones (P90)'],
+                'Métrica': ['Partidos', 'Minutos', 'Nota SofaScore', 'Goles (P90)', 'Asistencias (P90)', 
+                           'Pases Clave (P90)', 'Efect. Pases %', 'Regates (P90)', 'Duelos Ganados (P90)', 'Quites (P90)', 'Intercepciones (P90)'],
                 f'{j_a} ({t_a})': [
                     int(s_a['Partidos']), int(s_a['Mins']), f"{s_a['Nota']:.2f}",
-                    int(s_a['Goles']), int(s_a['Asist']), int(s_a['KP']),
+                    f"{s_a['Goles']:.2f}", f"{s_a['Asist']:.2f}", f"{s_a['KP']:.2f}",
                     f"{s_a['Efect_Pases']:.1f}%", f"{s_a['Regates']:.2f}", f"{s_a['Duelos']:.2f}", f"{s_a['Quites']:.2f}", f"{s_a['Inter']:.2f}"
                 ],
                 f'{j_b} ({t_b})': [
                     int(s_b['Partidos']), int(s_b['Mins']), f"{s_b['Nota']:.2f}",
-                    int(s_b['Goles']), int(s_b['Asist']), int(s_b['KP']),
+                    f"{s_b['Goles']:.2f}", f"{s_b['Asist']:.2f}", f"{s_b['KP']:.2f}",
                     f"{s_b['Efect_Pases']:.1f}%", f"{s_b['Regates']:.2f}", f"{s_b['Duelos']:.2f}", f"{s_b['Quites']:.2f}", f"{s_b['Inter']:.2f}"
                 ]
             })
