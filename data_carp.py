@@ -201,6 +201,39 @@ h1.page-title {
     color: var(--red-primary);
 }
 
+/* === METRIC CARDS === */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.metric-card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+}
+.metric-card:hover { box-shadow: var(--shadow-md); }
+.metric-card .metric-value {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 36px;
+    color: var(--red-primary);
+    line-height: 1;
+}
+.metric-card .metric-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    color: var(--gray-400);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
 /* === DATAFRAMES === */
 [data-testid="stDataFrame"] {
     border-radius: var(--radius-md) !important;
@@ -270,6 +303,10 @@ h1.page-title {
     font-weight: 700 !important;
     color: var(--gray-400) !important;
 }
+[data-testid="stMetricDelta"] {
+    font-family: 'Rajdhani', sans-serif !important;
+    font-weight: 700 !important;
+}
 
 /* === INFO BOXES === */
 .info-box {
@@ -282,6 +319,19 @@ h1.page-title {
     font-size: 13px;
     color: var(--gray-600);
     font-weight: 500;
+}
+
+/* === HEADER BARRA === */
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+.page-header-icon {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 4px;
 }
 
 /* === TABS === */
@@ -318,14 +368,9 @@ h1.page-title {
     background: rgba(208,2,27,0.12) !important;
 }
 
-/* Customización del selector horizontal de localía */
-div.row-widget.stRadio > div {
-    flex-direction: row;
-    gap: 20px;
-    background: var(--gray-50);
-    padding: 10px 15px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--gray-200);
+/* === PLOTLY CHARTS === */
+.js-plotly-plot .plotly .modebar {
+    background: transparent !important;
 }
 
 /* === COMPARADOR === */
@@ -388,6 +433,7 @@ PLOTLY_LAYOUT = dict(
 )
 
 def apply_plotly_style(fig, title="", xaxis_title="", yaxis_title=""):
+    """Aplica estilos consistentes a todos los gráficos."""
     fig.update_layout(
         **PLOTLY_LAYOUT,
         title=title,
@@ -462,6 +508,21 @@ def cargar_datos_completos(ruta_excel):
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
 
 @st.cache_data
+def cargar_todas_las_temporadas():
+    todos_datos = []
+    for anio, ruta in temporadas_dict.items():
+        df, estado = cargar_datos_completos(ruta)
+        if estado == "OK" and not df.empty:
+            df['Temporada'] = anio
+            todos_datos.append(df)
+    if todos_datos:
+        df_completo = pd.concat(todos_datos, ignore_index=True)
+        if 'Efectividad Pases' in df_completo.columns:
+            df_completo['Efectividad Pases'] = df_completo['Efectividad Pases'].replace(0, np.nan)
+        return df_completo
+    return pd.DataFrame()
+
+@st.cache_data
 def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
     try:
         wb = load_workbook(ruta_excel_str, data_only=True)
@@ -473,30 +534,6 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
         return None
     except:
         return None
-
-# ¡FUNCIÓN REPARADA Y AGREGADA AQUÍ!
-@st.cache_data
-def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
-    try:
-        df = pd.read_excel(ruta_excel_str, sheet_name=nombre_hoja, header=None)
-        row_idx, col_idx = None, None
-        for r in range(min(120, len(df))):
-            for c in range(min(15, len(df.columns))):
-                val = str(df.iloc[r, c]).strip().lower()
-                if val in ['métrica', 'metrica']:
-                    row_idx, col_idx = r, c
-                    break
-            if row_idx is not None: break
-        if row_idx is not None:
-            df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
-            df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
-            df_team = df_team.dropna(subset=[df_team.columns[0]])
-            df_team = df_team[df_team[df_team.columns[0]].astype(str).str.strip() != '']
-            df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
-            return df_team
-        return pd.DataFrame()
-    except:
-        return pd.DataFrame()
 
 @st.cache_data
 def extraer_info_partido(ruta_excel_str, nombre_hoja):
@@ -519,16 +556,14 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
         return "Local", "Rival", "?", "?"
 
 @st.cache_data
-def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
+def generar_historial_rivales(ruta_excel_str, hojas):
+    """Genera la tabla de historial (W/D/L) leyendo todos los resultados de una temporada"""
     historial = {}
     for hoja in hojas:
         local, rival, g_local, g_rival = extraer_info_partido(ruta_excel_str, hoja)
         if g_local == "?" or g_rival == "?": continue
         
-        is_river_local = 'River' in local
-        if condicion == "Local" and not is_river_local: continue
-        if condicion == "Visitante" and is_river_local: continue
-        
+        # Función interna para limpiar los penales y obtener los goles del partido
         def clean_goals(g_str):
             m = re.match(r'^(\d+)', str(g_str).strip())
             return int(m.group(1)) if m else 0
@@ -536,7 +571,7 @@ def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
         gl = clean_goals(g_local)
         gv = clean_goals(g_rival)
         
-        if is_river_local:
+        if 'River' in local:
             equipo_rival = rival
             gf = gl
             gc = gv
@@ -564,7 +599,8 @@ def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
     return df_hist
 
 @st.cache_data
-def generar_historial_completo(condicion="Total"):
+def generar_historial_completo():
+    """Genera la tabla de historial combinando TODOS los archivos de TODAS las temporadas"""
     historial = {}
     for anio, ruta in temporadas_dict.items():
         try:
@@ -576,10 +612,6 @@ def generar_historial_completo(condicion="Total"):
                 local, rival, g_local, g_rival = extraer_info_partido(str(ruta), hoja)
                 if g_local == "?" or g_rival == "?": continue
                 
-                is_river_local = 'River' in local
-                if condicion == "Local" and not is_river_local: continue
-                if condicion == "Visitante" and is_river_local: continue
-                
                 def clean_goals(g_str):
                     m = re.match(r'^(\d+)', str(g_str).strip())
                     return int(m.group(1)) if m else 0
@@ -587,7 +619,7 @@ def generar_historial_completo(condicion="Total"):
                 gl = clean_goals(g_local)
                 gv = clean_goals(g_rival)
                 
-                if is_river_local:
+                if 'River' in local:
                     equipo_rival = rival
                     gf = gl
                     gc = gv
@@ -670,12 +702,13 @@ with st.sidebar:
 
     if categoria == "🏆 Por Temporada":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Resumen General", "Mercado de Pases", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
+        menu = st.radio("", ["Resumen General", "Historial", "Mapas de Rendimiento", "Análisis Individual"], label_visibility="collapsed")
     elif categoria == "🗓️ Por Fecha":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
     else:
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
+        # 🔥 ACÁ SE AGREGÓ "Historial General" A LAS HERRAMIENTAS
         menu = st.radio("", ["Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -827,90 +860,15 @@ if menu == "Resumen General":
             height=500,
         )
 
-# ─── MERCADO DE PASES ──────────────────────────────────────────────────────────
-# ─── MERCADO DE PASES ──────────────────────────────────────────────────────────
-elif menu == "Mercado de Pases":
-    page_header("🤝", "MERCADO DE PASES", f"Altas y Bajas · Temporada {temporada_sel}")
-    
-    ruta_mercado = CARPETA / "Mercado_de_Pases_River.xlsx"
-    
-    if not ruta_mercado.exists():
-        st.warning("No se encontró el archivo 'Mercado_de_Pases_River.xlsx' en tu carpeta. Ejecutá el scraper de mercados para crearlo.")
-    else:
-        try:
-            df_mercado = pd.read_excel(ruta_mercado, sheet_name=str(temporada_sel))
-            
-            periodo_sel = st.radio("Ventana de Transferencias:", ["Todo el Año", "Inicio de Temporada", "Mitad de Temporada"], horizontal=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            
-            if periodo_sel != "Todo el Año":
-                df_mercado = df_mercado[df_mercado['periodo'] == periodo_sel]
-            
-            df_altas = df_mercado[df_mercado['alta o baja'] == 'Alta'].copy()
-            df_bajas = df_mercado[df_mercado['alta o baja'] == 'Baja'].copy()
-            
-            # --- MOTOR HTML ESTILO FOOTBALL MANAGER ---
-          # --- MOTOR HTML ESTILO FOOTBALL MANAGER ---
-            def generar_tabla_fm(df, tipo):
-                if df.empty:
-                    return "<div style='padding: 20px; text-align: center; color: #6B7280; font-family: Inter; border: 1px dashed #E5E7EB; border-radius: 8px;'>No hay registros en este periodo.</div>"
-                
-                # Rojo si compramos (gasto), Verde si vendemos (ingreso)
-                color_coste = "#D0021B" if tipo == "Alta" else "#22C55E" 
-                
-                # SIN INDENTACIÓN para que Streamlit no lo convierta en bloque de texto
-                html = f"""<style>
-.fm-table-{tipo} {{ width: 100%; border-collapse: separate; border-spacing: 0; font-family: 'Inter', sans-serif; font-size: 13px; border: 1px solid #E5E7EB; border-radius: 8px; overflow: hidden; }}
-.fm-table-{tipo} th {{ background-color: #111827; color: #9CA3AF; text-transform: uppercase; font-family: 'Rajdhani', sans-serif; letter-spacing: 1.5px; padding: 12px 16px; text-align: left; font-weight: 600; }}
-.fm-table-{tipo} th.right {{ text-align: right; }}
-.fm-table-{tipo} td {{ padding: 12px 16px; border-bottom: 1px solid #F3F4F6; color: #1F2937; background-color: #FFFFFF; transition: background-color 0.2s; }}
-.fm-table-{tipo} tr:last-child td {{ border-bottom: none; }}
-.fm-table-{tipo} tr:hover td {{ background-color: #F9FAFB; }}
-.fm-player {{ font-weight: 600; color: #111827; font-size: 14px; }}
-.fm-club {{ color: #4B5563; font-size: 12px; margin-top: 2px; }}
-.fm-cost {{ font-family: 'Rajdhani', sans-serif; font-weight: 700; text-align: right; color: {color_coste}; font-size: 14px; letter-spacing: 0.5px; }}
-</style>
-<table class="fm-table-{tipo}">
-<thead>
-<tr>
-<th>Jugador</th>
-<th>{"Procedencia" if tipo == "Alta" else "Destino"}</th>
-<th class="right">Condición / Coste</th>
-</tr>
-</thead>
-<tbody>"""
-                for _, row in df.iterrows():
-                    html += f"""<tr>
-<td><div class="fm-player">{row['nombre']}</div></td>
-<td><div class="fm-club">{row['club final']}</div></td>
-<td class="right"><div class="fm-cost">{row['coste']}</div></td>
-</tr>"""
-                html += "</tbody></table>"
-                return html
-
-            # --- DIBUJADO DE LAS COLUMNAS ---
-            c_altas, c_bajas = st.columns(2)
-            
-            with c_altas:
-                st.markdown("<div class='section-title' style='color:#22C55E; font-size: 22px;'>🟢 ALTAS (LLEGADAS)</div>", unsafe_allow_html=True)
-                st.markdown(generar_tabla_fm(df_altas, "Alta"), unsafe_allow_html=True)
-                
-            with c_bajas:
-                st.markdown("<div class='section-title' style='color:#EF4444; font-size: 22px;'>🔴 BAJAS (SALIDAS)</div>", unsafe_allow_html=True)
-                st.markdown(generar_tabla_fm(df_bajas, "Baja"), unsafe_allow_html=True)
-
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
 elif menu == "Historial":
     page_header("📖", "HISTORIAL VS RIVALES", f"Temporada {temporada_sel}")
     
-    condicion_sel = st.radio("Condición:", ["Total", "Local", "Visitante"], horizontal=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    
     hojas_unicas = df_raw.drop_duplicates('Partido')['Hoja_Original'].tolist()
-    df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas, condicion_sel)
+    df_historial = generar_historial_rivales(str(EXCEL_ACTUAL), hojas_unicas)
     
     if df_historial.empty:
-        st.info(f"No hay partidos registrados bajo la condición '{condicion_sel}' en esta temporada.")
+        st.info("No hay datos suficientes para armar el historial en esta temporada.")
     else:
         total_pj = df_historial['PJ'].sum()
         total_pg = df_historial['PG'].sum()
@@ -930,7 +888,7 @@ elif menu == "Historial":
         c_graf, c_tabla = st.columns([1.5, 1])
         
         with c_graf:
-            st.markdown("<div class='section-title'>📊 RESULTADOS POR RIVAL</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>📊 EFECTIVIDAD POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
             
             fig_hist = go.Figure()
@@ -957,7 +915,7 @@ elif menu == "Historial":
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b>.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
@@ -1135,6 +1093,7 @@ elif menu == "Análisis Individual":
             height=340,
         )
         st.plotly_chart(fig_l, use_container_width=True)
+        st.markdown("<div class='info-box'>Las barras <b style='color:#D0021B;'>rojas</b> indican partidos por encima del promedio del jugador. Las <b style='color:#9CA3AF;'>grises</b>, por debajo.</div>", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1142,6 +1101,7 @@ elif menu == "Análisis Individual":
 
         with c_radar:
             st.markdown("<div class='section-title'>🛡️ PERFIL TÁCTICO</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>El borde exterior = máximo del plantel en esa métrica (jugadores con ≥ 300 min). El área del jugador muestra su % respecto al máximo.</div>", unsafe_allow_html=True)
 
             metrics_radar = ['Goles', 'Asistencias', 'Pases Clave', 'Quites (Tackles)', 'Intercepciones']
             labels_radar  = ['Goles', 'Asistencias', 'Pases Clave', 'Quites', 'Intercep.']
@@ -1216,10 +1176,7 @@ elif menu == "Estadísticas de Equipo":
     hojas = df_raw.drop_duplicates('Partido')[['Partido', 'Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
-    
-    # ACÁ SE USA LA FUNCIÓN QUE TE TIRABA ERROR
     df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
-    
     if not df_equipo.empty:
         try:
             cols = df_equipo.columns.tolist()
@@ -1538,6 +1495,7 @@ elif menu == "Cara a Cara":
             height=560,
         )
         st.plotly_chart(fig_radar, use_container_width=True)
+        st.markdown("<div class='info-box'>El área cubre el % respecto al máximo global entre ambas temporadas. 100% = el mejor de todos los jugadores con ≥300 min en esa métrica.</div>", unsafe_allow_html=True)
 
         st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
         datos_tabla = pd.DataFrame({
@@ -1563,13 +1521,10 @@ elif menu == "Cara a Cara":
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
     
-    condicion_sel = st.radio("Condición:", ["Total", "Local", "Visitante"], horizontal=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    df_historial = generar_historial_completo(condicion_sel)
+    df_historial = generar_historial_completo()
     
     if df_historial.empty:
-        st.info(f"No hay partidos registrados bajo la condición '{condicion_sel}'.")
+        st.info("No hay datos suficientes para armar el historial general.")
     else:
         total_pj = df_historial['PJ'].sum()
         total_pg = df_historial['PG'].sum()
@@ -1589,7 +1544,7 @@ elif menu == "Historial General":
         c_graf, c_tabla = st.columns([1.5, 1])
         
         with c_graf:
-            st.markdown("<div class='section-title'>📊 RESULTADOS HISTÓRICOS POR RIVAL</div>", unsafe_allow_html=True)
+            st.markdown("<div class='section-title'>📊 EFECTIVIDAD HISTÓRICA POR RIVAL</div>", unsafe_allow_html=True)
             df_hist_graf = df_historial.sort_values(by='PJ', ascending=True)
             
             fig_hist = go.Figure()
@@ -1616,7 +1571,7 @@ elif menu == "Historial General":
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_hist, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b>.</div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 Los partidos definidos por penales se contabilizan estadísticamente como <b>Empate</b> en el historial oficial.</div>", unsafe_allow_html=True)
 
         with c_tabla:
             st.markdown("<div class='section-title'>📋 TABLA DETALLADA</div>", unsafe_allow_html=True)
