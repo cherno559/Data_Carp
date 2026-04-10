@@ -58,12 +58,11 @@ def cargar_datos_completos(ruta_excel):
             if hoja in hojas_omitir: continue
             df = pd.read_excel(ruta_excel, sheet_name=hoja)
             
-            # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos las columnas a texto antes de limpiar
+            # 🔥 ESCUDO ANTI-ERRORES: Convertimos las columnas a texto antes de limpiar
             df.columns = df.columns.astype(str).str.strip()
             
             if 'Jugador' in df.columns and 'Nota SofaScore' in df.columns:
-                
-                # 🔥 ESCUDO ANTI-ERRORES 2024: Convertimos la columna Jugador a texto antes de limpiar
+                # 🔥 ESCUDO ANTI-ERRORES: Convertimos la columna Jugador a texto antes de limpiar
                 df['Jugador'] = df['Jugador'].astype(str).str.strip()
                 
                 df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
@@ -247,7 +246,6 @@ if menu == "Resumen General":
     
     st.subheader("📊 Promedios SofaScore")
     df_promedios = df_agrupado[['Jugador', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
-    
     st.dataframe(df_promedios, hide_index=True, use_container_width=True)
     st.divider()
     
@@ -391,7 +389,7 @@ elif menu == "Mapa de Tiros":
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =============================================================================
-# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO P90)
+# 9. HERRAMIENTAS: CARA A CARA (P90 - FILTRO 300 MINS)
 # =============================================================================
 
 elif menu == "Cara a Cara":
@@ -486,16 +484,16 @@ elif menu == "Cara a Cara":
                 st.metric(label=f"{j_b} ({t_b})", value=f"{s_b['Nota']:.2f}", delta=f"{s_b['Nota'] - s_a['Nota']:.2f}")
             with col_m2:
                 st.markdown(f"**Minutos Jugados**")
-                st.metric(label=f"{j_a}", value=int(s_a['Mins']))
-                st.metric(label=f"{j_b}", value=int(s_b['Mins']), delta=int(s_b['Mins'] - s_a['Mins']))
+                st.metric(label=f"{j_a} ({t_a})", value=int(s_a['Mins']))
+                st.metric(label=f"{j_b} ({t_b})", value=int(s_b['Mins']), delta=int(s_b['Mins'] - s_a['Mins']))
             with col_m3:
                 st.markdown(f"**Goles (P90)**")
-                st.metric(label=f"{j_a}", value=f"{s_a['Goles']:.2f}")
-                st.metric(label=f"{j_b}", value=f"{s_b['Goles']:.2f}", delta=f"{s_b['Goles'] - s_a['Goles']:.2f}")
+                st.metric(label=f"{j_a} ({t_a})", value=f"{s_a['Goles']:.2f}")
+                st.metric(label=f"{j_b} ({t_b})", value=f"{s_b['Goles']:.2f}", delta=f"{s_b['Goles'] - s_a['Goles']:.2f}")
             with col_m4:
                 st.markdown(f"**Asistencias (P90)**")
-                st.metric(label=f"{j_a}", value=f"{s_a['Asist']:.2f}")
-                st.metric(label=f"{j_b}", value=f"{s_b['Asist']:.2f}", delta=f"{s_b['Asist'] - s_a['Asist']:.2f}")
+                st.metric(label=f"{j_a} ({t_a})", value=f"{s_a['Asist']:.2f}")
+                st.metric(label=f"{j_b} ({t_b})", value=f"{s_b['Asist']:.2f}", delta=f"{s_b['Asist'] - s_a['Asist']:.2f}")
 
             st.markdown("---")
             st.subheader("🛡️ Comparación de Perfiles Tácticos")
@@ -529,15 +527,15 @@ elif menu == "Cara a Cara":
                 tg['Quites'] = df_temp.groupby('Jugador')[q_c].sum()
                 tg['Minutos_Safe'] = tg['Minutos'].replace(0, 1)
                 
-                # FILTRO ANTI-ANOMALÍAS: Exigimos al menos 180 mins para las escalas P90
-                tg_p90 = tg[tg['Minutos'] >= 180]
+                # 🔥 FILTRO ANTI-ANOMALÍAS: Exigimos al menos 300 mins para definir los techos del radar
+                tg_p90 = tg[tg['Minutos'] >= 300]
                 if tg_p90.empty: tg_p90 = tg 
                 
                 return [
                     ((tg_p90['Goles']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Asistencias']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Pases Clave']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
-                    tg['Efectividad Pases'].fillna(0).max(),
+                    95.0, # Tope fijo 95% para pases para no aplastar el gráfico
                     ((tg_p90['Regates_Exitosos']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Duelos_Ganados']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
                     ((tg_p90['Quites']/tg_p90['Minutos_Safe'])*90).fillna(0).max(), 
@@ -546,8 +544,8 @@ elif menu == "Cara a Cara":
 
             mx_a = get_max_mix(df_todas_temporadas, t_a)
             mx_b = get_max_mix(df_todas_temporadas, t_b)
-            # Normalización GLOBAL
             mx_global = [max(a, b) for a, b in zip(mx_a, mx_b)]
+            mx_global[3] = 95.0 # Aseguramos el tope de pases
 
             fig_radar_comparativo = go.Figure()
             
@@ -563,7 +561,6 @@ elif menu == "Cara a Cara":
             valores_j2_norm = [(v / m_val * 100) if m_val and m_val > 0 else 0 for v, m_val in zip(valores_j2, mx_global)]
             text_j2 = [f"{labs[i]}: {format_hover(valores_j2[i], i)}" for i in range(len(labs))] + [f"{labs[0]}: {format_hover(valores_j2[0], 0)}"]
 
-            # Trazo Jugador 1 (Rojo)
             fig_radar_comparativo.add_trace(go.Scatterpolar(
                 r=valores_j1_norm + [valores_j1_norm[0]],
                 theta=labs + [labs[0]],
@@ -576,7 +573,6 @@ elif menu == "Cara a Cara":
                 text=text_j1
             ))
             
-            # Trazo Jugador 2 (Gris)
             fig_radar_comparativo.add_trace(go.Scatterpolar(
                 r=valores_j2_norm + [valores_j2_norm[0]],
                 theta=labs + [labs[0]],
