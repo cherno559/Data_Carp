@@ -187,7 +187,7 @@ with col_bot2:
     if RUTA_LOGO_CARP.exists(): st.image(str(RUTA_LOGO_CARP), width=80)
 
 # =============================================================================
-# 6. PROCESAMIENTO DE DATOS (BLINDADO)
+# 6. PROCESAMIENTO DE DATOS
 # =============================================================================
 df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
 if estado != "OK":
@@ -313,7 +313,7 @@ elif menu == "Análisis Individual":
             st.metric("Recuperaciones Totales", int(df_j['Quites (Tackles)'].sum() + df_j['Intercepciones'].sum()) if 'Quites (Tackles)' in df_j.columns else 0)
 
 # =============================================================================
-# 8. PÁGINAS: POR FECHA (BLINDADO)
+# 8. PÁGINAS: POR FECHA
 # =============================================================================
 elif menu == "Estadísticas de Equipo":
     st.markdown("<h1>⚖️ Estadísticas de Equipo</h1>", unsafe_allow_html=True)
@@ -370,7 +370,7 @@ elif menu == "Mapa de Tiros":
     if img_v: st.image(img_v, caption="Rival", use_container_width=True)
 
 # =============================================================================
-# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO CON REGATES P90)
+# 9. HERRAMIENTAS: CARA A CARA (ACTUALIZADO - FILTRO P90)
 # =============================================================================
 
 elif menu == "Cara a Cara":
@@ -508,13 +508,17 @@ elif menu == "Cara a Cara":
                 tg['Quites'] = df_temp.groupby('Jugador')[q_c].sum()
                 tg['Minutos_Safe'] = tg['Minutos'].replace(0, 1)
                 
+                # FILTRO ANTI-ANOMALÍAS: Exigimos al menos 180 mins para las escalas P90
+                tg_p90 = tg[tg['Minutos'] >= 180]
+                if tg_p90.empty: tg_p90 = tg # Fallback por si la base recién empieza
+                
                 return [
                     tg['Goles'].max(), tg['Asistencias'].max(), tg['Pases Clave'].max(), 
                     tg['Efectividad Pases'].fillna(0).max(),
-                    ((tg['Regates_Exitosos']/tg['Minutos_Safe'])*90).fillna(0).max(),
-                    ((tg['Duelos_Ganados']/tg['Minutos_Safe'])*90).fillna(0).max(),
-                    ((tg['Quites']/tg['Minutos_Safe'])*90).fillna(0).max(), 
-                    ((tg['Intercepciones']/tg['Minutos_Safe'])*90).fillna(0).max()
+                    ((tg_p90['Regates_Exitosos']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
+                    ((tg_p90['Duelos_Ganados']/tg_p90['Minutos_Safe'])*90).fillna(0).max(),
+                    ((tg_p90['Quites']/tg_p90['Minutos_Safe'])*90).fillna(0).max(), 
+                    ((tg_p90['Intercepciones']/tg_p90['Minutos_Safe'])*90).fillna(0).max()
                 ]
 
             mx_a = get_max_mix(df_todas_temporadas, t_a)
