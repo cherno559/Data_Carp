@@ -703,7 +703,11 @@ if estado != "OK":
 if 'Efectividad Pases' in df_raw.columns:
     df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
-df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
+# 1. Obtenemos la posición más frecuente de cada jugador para no dividir sus partidos
+posiciones = df_raw.groupby('Jugador')['Posición'].agg(lambda x: x.mode()[0] if not x.mode().empty else '—').reset_index()
+
+# 2. Agrupamos SOLO por Jugador (esto soluciona el problema de Driussi con posiciones múltiples)
+df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
     Partidos=('Nota SofaScore', 'count'),
     Promedio=('Nota SofaScore', 'mean'),
     Minutos=('Minutos', 'sum'),
@@ -715,6 +719,10 @@ df_agrupado = df_raw.groupby(['Jugador', 'Posición'], as_index=False).agg(
     Tiros_Totales=('Tiros Totales', 'sum'),
     Efectividad_Pases=('Efectividad Pases', 'mean')
 )
+
+# 3. Le pegamos la posición de vuelta
+df_agrupado = df_agrupado.merge(posiciones, on='Jugador')
+
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
@@ -1156,8 +1164,11 @@ elif menu == "Estadísticas de Equipo":
             metrica_col = cols[0]
             local_col   = cols[1]
             rival_col   = cols[2]
-            df_equipo[local_col] = pd.to_numeric(df_equipo[local_col], errors='coerce')
-            df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col], errors='coerce')
+            
+            # Limpiamos el % para que la gráfica no devuelva None/NaN
+            df_equipo[local_col] = pd.to_numeric(df_equipo[local_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
+            df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
+            
             df_num = df_equipo.dropna(subset=[local_col, rival_col])
 
             if not df_num.empty:
