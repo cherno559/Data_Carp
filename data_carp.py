@@ -450,9 +450,14 @@ def cargar_datos_completos(ruta_excel):
             if 'Jugador' not in df.columns:
                 continue
 
-            # ── FIX: Forzamos string y reemplazamos espacios de forma segura ──
+            # ── FIX DEFINITIVO: ASPIRADORA DE TILDES Y ESPACIOS (Y PREVENCIÓN DE FLOAT) ──
+            # Almacenamos todo como string para que el .apply(lambda) no explote si recibe un número/NaN
             df['Jugador'] = df['Jugador'].fillna("").astype(str).str.strip().str.title()
             df['Jugador'] = df['Jugador'].apply(lambda x: re.sub(r'\s+', ' ', str(x)))
+            
+            reemplazos = {'Á':'A', 'É':'E', 'Í':'I', 'Ó':'O', 'Ú':'U', 'á':'a', 'é':'e', 'í':'i', 'ó':'o', 'ú':'u'}
+            for con_tilde, sin_tilde in reemplazos.items():
+                df['Jugador'] = df['Jugador'].str.replace(con_tilde, sin_tilde)
 
             # Aseguramos minutos numéricos
             if 'Minutos' in df.columns:
@@ -726,7 +731,6 @@ if 'Efectividad Pases' in df_raw.columns:
     df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
 # ── AGRUPACIÓN CORREGIDA ──────────────────────────────────────────────────────
-# 1. Posición más frecuente por jugador
 if 'Posición' in df_raw.columns:
     posiciones = df_raw.groupby('Jugador')['Posición'].agg(
         lambda x: x.mode()[0] if not x.mode().empty else '—'
@@ -734,7 +738,6 @@ if 'Posición' in df_raw.columns:
 else:
     posiciones = pd.DataFrame({'Jugador': df_raw['Jugador'].unique(), 'Posición': '—'})
 
-# 2. Agrupamos solo por Jugador.
 df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
     Partidos=('Partido', 'nunique'),          
     Promedio=('Nota SofaScore', 'mean'),      
@@ -751,20 +754,17 @@ df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
 if 'Quites' in df_agrupado.columns and 'Quites (Tackles)' not in df_agrupado.columns:
     df_agrupado = df_agrupado.rename(columns={'Quites': 'Quites (Tackles)'})
 
-# 3. Pegamos la posición
 df_agrupado = df_agrupado.merge(posiciones, on='Jugador')
 
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
-# Forma: últimas 5 notas (solo donde hay nota válida)
 df_forma = df_raw.dropna(subset=['Nota SofaScore']).groupby('Jugador')['Nota SofaScore'].apply(
     lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
 ).reset_index(name='Forma (Últ. 5)')
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 df_agrupado['Forma (Últ. 5)'] = df_agrupado['Forma (Últ. 5)'].fillna('—')
 
-# ── Total de partidos del archivo (para el resumen general) ───────────────────
 total_partidos_temporada = df_raw['Partido'].nunique()
 
 
@@ -1547,7 +1547,7 @@ elif menu == "Cara a Cara":
         })
         st.dataframe(datos_tabla, hide_index=True, use_container_width=True)
 
-# ─── HISTORIAL GENERAL ────────────────────────────────────────────────────────
+# ─── HISTORIAL GENERAL (NUEVO EN HERRAMIENTAS) ────────────────────────────────
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
     
