@@ -432,6 +432,23 @@ anios_disponibles = sorted(list(temporadas_dict.keys()), reverse=True)
 # ── CARGA DE DATOS ────────────────────────────────────────────────────────────
 @st.cache_data
 def cargar_datos_completos(ruta_excel):
+    """
+    Carga todas las hojas del Excel y las concatena en un único DataFrame.
+
+    CORRECCIONES vs versión anterior:
+    ─────────────────────────────────
+    1. Se mantienen TODAS las filas con nombre de jugador válido, aunque la
+       nota sea NaN o 0.  Así el conteo de partidos (Partido nunique) es
+       correcto para jugadores como Driussi o Pezzella que a veces no tienen
+       nota registrada en algún partido.
+
+    2. La columna 'Nota SofaScore' se convierte a numérico y los valores
+       inválidos quedan como NaN (no se eliminan las filas).  El promedio
+       posterior usa mean() que ignora NaN automáticamente.
+
+    3. Para métricas numéricas opcionales se rellena NaN con 0 solo en esas
+       columnas, sin tocar la nota.
+    """
     if not ruta_excel.exists():
         return pd.DataFrame(), f"❌ No se encontró el archivo: {ruta_excel.name}"
     try:
@@ -443,42 +460,52 @@ def cargar_datos_completos(ruta_excel):
                 continue
             df = pd.read_excel(ruta_excel, sheet_name=hoja)
             df.columns = df.columns.astype(str).str.strip()
-            
+
+            # Necesitamos al menos la columna Jugador
             if 'Jugador' not in df.columns:
                 continue
-                
-            # Normalización estricta de nombres para no duplicar jugadores
-            df['Jugador'] = df['Jugador'].astype(str).str.strip().str.title()
-            df['Jugador'] = df['Jugador'].apply(lambda x: re.sub(r'\s+', ' ', x))
-            
-            # Aseguramos minutos numéricos
-            if 'Minutos' in df.columns:
-                df['Minutos'] = pd.to_numeric(df['Minutos'], errors="coerce").fillna(0)
-            else:
-                df['Minutos'] = 0
-                
-            # Filtro: Jugadores reales que hayan jugado más de 0 minutos. NO BORRAMOS por falta de Nota.
-            df = df[(df['Jugador'] != "") & (df['Jugador'] != "Nan") & (df['Minutos'] > 0)]
-            
-            # Limpiamos las notas, si no hay nota (entraron pocos min), queda en NaN para no arruinar el promedio
-            if 'Nota SofaScore' in df.columns:
-                df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
-                df['Nota SofaScore'] = df['Nota SofaScore'].replace(0, np.nan)
-            else:
-                df['Nota SofaScore'] = np.nan
-                
-            cols_num = ['Goles', 'Asistencias', 'Pases Clave',
+
+            df['Jugador'] = df['Jugador'].astype(str).str.strip()
+
+            # ── FIX 1: solo descartamos filas sin nombre de jugador ──────────
+            df = df[df['Jugador'].notna() & (df['Jugador'] != "") & (df['Jugador'] != "nan")]
+
+            # La columna de nota puede no existir en algunas hojas especiales
+            if 'Nota SofaScore' not in df.columns:
+                continue
+
+            # ── FIX 2: convertimos a numérico sin descartar la fila ──────────
+            df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
+            # Solo eliminamos filas donde el jugador tiene nota 0 explícita
+            # (valor ingresado a mano) pero NO donde es NaN (partido sin dato)
+            df = df[~(df['Nota SofaScore'] == 0)]
+
+            cols_num = ['Minutos', 'Goles', 'Asistencias', 'Pases Clave',
                         'Quites (Tackles)', 'Intercepciones', 'Tiros Totales', 'Efectividad Pases']
             for col in cols_num:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
-                    
+
             df['Hoja_Original'] = hoja
             df['Partido'] = hoja
             partes.append(df)
+
         return pd.concat(partes, ignore_index=True) if partes else pd.DataFrame(), "OK"
     except Exception as e:
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
+
+@st.cache_data
+def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
+    try:
+        wb = load_workbook(ruta_excel_str, data_only=True)
+        if nombre_hoja in wb.sheetnames:
+            ws = wb[nombre_hoja]
+            if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
+                img = ws._images[indice_imagen]
+                return img._data() if callable(img._data) else img._data
+        return None
+    except:
+        return None
 
 @st.cache_data
 def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
@@ -502,19 +529,6 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
         return pd.DataFrame()
     except:
         return pd.DataFrame()
-
-@st.cache_data
-def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
-    try:
-        wb = load_workbook(ruta_excel_str, data_only=True)
-        if nombre_hoja in wb.sheetnames:
-            ws = wb[nombre_hoja]
-            if hasattr(ws, '_images') and len(ws._images) > indice_imagen:
-                img = ws._images[indice_imagen]
-                return img._data() if callable(img._data) else img._data
-        return None
-    except:
-        return None
 
 @st.cache_data
 def extraer_info_partido(ruta_excel_str, nombre_hoja):
@@ -712,7 +726,7 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ── CARGA Y PROCESAMIENTO GENERAL ─────────────────────────────────────────────
+# ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
 df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
 if estado != "OK":
     st.error(estado)
@@ -721,43 +735,46 @@ if estado != "OK":
 if 'Efectividad Pases' in df_raw.columns:
     df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
-# 1. Obtenemos la posición más frecuente de cada jugador para no dividir sus partidos
-if 'Posición' in df_raw.columns:
-    posiciones = df_raw.groupby('Jugador')['Posición'].agg(lambda x: x.mode()[0] if not x.mode().empty else '—').reset_index()
-else:
-    posiciones = pd.DataFrame({'Jugador': df_raw['Jugador'].unique(), 'Posición': '—'})
+# ── AGRUPACIÓN CORREGIDA ──────────────────────────────────────────────────────
+# 1. Posición más frecuente por jugador
+posiciones = df_raw.groupby('Jugador')['Posición'].agg(
+    lambda x: x.mode()[0] if not x.mode().empty else '—'
+).reset_index()
 
-# 2. Agrupamos SOLO por Jugador, contando como partido cuando tiene minutos jugados
+# 2. Agrupamos solo por Jugador.
+#    - Partidos: cantidad de hojas/partidos distintos en que aparece (nunique)
+#      ── FIX PRINCIPAL: antes usaba count() sobre Nota SofaScore, lo que
+#         excluía partidos donde la nota era NaN (ej. Driussi, Pezzella).
+#    - Promedio: mean() ignora NaN automáticamente → correcto.
 df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
-    Partidos=('Minutos', lambda x: (x > 0).sum()), # Cuenta partidos jugados reales
-    Promedio=('Nota SofaScore', 'mean'), # 'mean' ignora automáticamente los NaN
+    Partidos=('Partido', 'nunique'),          # ← CORREGIDO: nunique en vez de count
+    Promedio=('Nota SofaScore', 'mean'),      # mean ignora NaN → ok
     Minutos=('Minutos', 'sum'),
     Goles=('Goles', 'sum'),
     Asistencias=('Asistencias', 'sum'),
     Pases_Clave=('Pases Clave', 'sum'),
-    Quites=('Quites (Tackles)', 'sum') if 'Quites (Tackles)' in df_raw.columns else ('Quites', 'sum'),
+    Quites=('Quites (Tackles)', 'sum'),
     Intercepciones=('Intercepciones', 'sum'),
     Tiros_Totales=('Tiros Totales', 'sum'),
     Efectividad_Pases=('Efectividad Pases', 'mean')
 )
 
-# En caso de que se haya llamado diferente la columna
-if 'Quites' in df_agrupado.columns and 'Quites (Tackles)' not in df_agrupado.columns:
-    df_agrupado = df_agrupado.rename(columns={'Quites': 'Quites (Tackles)'})
-
-# 3. Le pegamos la posición de vuelta
+# 3. Pegamos la posición
 df_agrupado = df_agrupado.merge(posiciones, on='Jugador')
 
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
-# Quitamos las notas vacías para armar la historia de los últimos 5
-df_forma = df_raw.dropna(subset=['Nota SofaScore']).groupby('Jugador')['Nota SofaScore'].apply(
-    lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
+# Forma: últimas 5 notas (solo donde hay nota válida)
+df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
+    lambda x: " | ".join([f"{n:.1f}" for n in x.dropna().tolist()[-5:]])
 ).reset_index(name='Forma (Últ. 5)')
-
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
-df_agrupado['Forma (Últ. 5)'] = df_agrupado['Forma (Últ. 5)'].fillna('—')
+
+# ── Total de partidos del archivo (para el resumen general) ───────────────────
+# FIX: contamos hojas únicas (partidos reales) en lugar de filas únicas en
+# la columna Partido, que podía contar mal si un partido tenía varias posiciones.
+total_partidos_temporada = df_raw['Partido'].nunique()
 
 
 # =============================================================================
@@ -768,10 +785,11 @@ df_agrupado['Forma (Últ. 5)'] = df_agrupado['Forma (Últ. 5)'].fillna('—')
 if menu == "Resumen General":
     page_header("🐔", f"PANEL GENERAL", f"Temporada {temporada_sel}")
 
-    total_partidos = df_raw['Partido'].nunique()
+    # ── FIX: usamos la variable pre-calculada con nunique ────────────────────
+    total_partidos  = total_partidos_temporada
     promedio_equipo = df_raw['Nota SofaScore'].mean()
-    total_goles = df_agrupado['Goles'].sum()
-    total_asist = df_agrupado['Asistencias'].sum()
+    total_goles     = df_agrupado['Goles'].sum()
+    total_asist     = df_agrupado['Asistencias'].sum()
 
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Partidos Analizados", int(total_partidos))
@@ -784,30 +802,40 @@ if menu == "Resumen General":
     tab1, tab2, tab3 = st.tabs(["📊 Promedios SofaScore", "⚽ Goles & Asistencias", "📋 Plantel Completo"])
 
     with tab1:
-        # Filtramos a los que tienen al menos un promedio válido para la tabla
-        df_promedios = df_agrupado.dropna(subset=['Promedio'])[['Jugador', 'Posición', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+        df_promedios = df_agrupado[['Jugador', 'Posición', 'Promedio', 'Partidos', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
         df_promedios.index = df_promedios.index + 1
 
-        if not df_promedios.empty:
-            fig_prom = go.Figure()
-            colores_barras = [COLORES_POSICION.get(p, '#9CA3AF') for p in df_promedios['Posición']]
-            fig_prom.add_trace(go.Bar(
-                x=df_promedios['Promedio'], y=df_promedios['Jugador'], orientation='h',
-                marker=dict(color=colores_barras, line=dict(width=0)),
-                text=df_promedios['Promedio'].apply(lambda x: f"{x:.2f}"),
-                textposition='outside',
-                textfont=dict(family="Rajdhani", size=12, color="#374151"),
-                hovertemplate="<b>%{y}</b><br>Nota: %{x:.2f}<br>Partidos: %{customdata}<extra></extra>",
-                customdata=df_promedios['Partidos'],
-            ))
-            fig_prom.add_vline(x=promedio_equipo, line_dash="dot", line_color="#D0021B", line_width=2,
-                annotation_text=f"Prom. Equipo: {promedio_equipo:.2f}", annotation_position="top right",
-                annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"))
-            apply_plotly_style(fig_prom, xaxis_title="Nota Promedio SofaScore", yaxis_title="")
-            fig_prom.update_layout(height=max(400, len(df_promedios) * 28),
-                xaxis=dict(range=[5, 8.5]), yaxis=dict(categoryorder='total ascending'))
-            st.plotly_chart(fig_prom, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Colores: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🟠 POR</b></div>", unsafe_allow_html=True)
+        fig_prom = go.Figure()
+        colores_barras = [COLORES_POSICION.get(p, '#9CA3AF') for p in df_promedios['Posición']]
+        fig_prom.add_trace(go.Bar(
+            x=df_promedios['Promedio'],
+            y=df_promedios['Jugador'],
+            orientation='h',
+            marker=dict(color=colores_barras, line=dict(width=0)),
+            text=df_promedios['Promedio'].apply(lambda x: f"{x:.2f}"),
+            textposition='outside',
+            textfont=dict(family="Rajdhani", size=12, color="#374151"),
+            hovertemplate="<b>%{y}</b><br>Nota: %{x:.2f}<br>Partidos: %{customdata}<extra></extra>",
+            customdata=df_promedios['Partidos'],
+        ))
+        fig_prom.add_vline(
+            x=promedio_equipo,
+            line_dash="dot",
+            line_color="#D0021B",
+            line_width=2,
+            annotation_text=f"Prom. Equipo: {promedio_equipo:.2f}",
+            annotation_position="top right",
+            annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"),
+        )
+        apply_plotly_style(fig_prom, xaxis_title="Nota Promedio SofaScore", yaxis_title="")
+        fig_prom.update_layout(
+            height=max(400, len(df_promedios) * 28),
+            xaxis=dict(range=[5, 8.5]),
+            yaxis=dict(categoryorder='total ascending'),
+        )
+        st.plotly_chart(fig_prom, use_container_width=True)
+
+        st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Los colores representan la posición: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🟠 POR</b></div>", unsafe_allow_html=True)
 
     with tab2:
         c1, c2 = st.columns(2)
@@ -817,7 +845,8 @@ if menu == "Resumen General":
             df_gol.index = df_gol.index + 1
             if not df_gol.empty:
                 fig_gol = go.Figure(go.Bar(
-                    x=df_gol['Jugador'], y=df_gol['Goles'], marker_color='#D0021B',
+                    x=df_gol['Jugador'], y=df_gol['Goles'],
+                    marker_color='#D0021B',
                     text=df_gol['Goles'], textposition='outside',
                     textfont=dict(family="Bebas Neue", size=18, color="#D0021B"),
                     hovertemplate="<b>%{x}</b><br>Goles: %{y}<extra></extra>",
@@ -833,7 +862,8 @@ if menu == "Resumen General":
             df_ast.index = df_ast.index + 1
             if not df_ast.empty:
                 fig_ast = go.Figure(go.Bar(
-                    x=df_ast['Jugador'], y=df_ast['Asistencias'], marker_color='#3B82F6',
+                    x=df_ast['Jugador'], y=df_ast['Asistencias'],
+                    marker_color='#3B82F6',
                     text=df_ast['Asistencias'], textposition='outside',
                     textfont=dict(family="Bebas Neue", size=18, color="#3B82F6"),
                     hovertemplate="<b>%{x}</b><br>Asistencias: %{y}<extra></extra>",
@@ -844,14 +874,13 @@ if menu == "Resumen General":
             st.dataframe(df_ast, hide_index=False, use_container_width=True)
 
     with tab3:
-        cols_mostrar = ['Jugador', 'Posición', 'Partidos', 'Promedio', 'Minutos', 'Goles', 'Asistencias',
-                          'Pases_Clave', 'Quites (Tackles)', 'Intercepciones', 'Forma (Últ. 5)']
-        cols_existentes = [c for c in cols_mostrar if c in df_agrupado.columns]
-        
         st.dataframe(
-            df_agrupado[cols_existentes].sort_values('Minutos', ascending=False).reset_index(drop=True),
-            hide_index=True, use_container_width=True, height=500,
+            df_agrupado[['Jugador', 'Posición', 'Partidos', 'Promedio', 'Minutos', 'Goles', 'Asistencias', 'Pases_Clave', 'Quites', 'Intercepciones', 'Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True),
+            hide_index=True,
+            use_container_width=True,
+            height=500,
         )
+
 
 
 # ─── HISTORIAL (POR TEMPORADA) ────────────────────────────────────────────────
@@ -940,17 +969,13 @@ elif menu == "Mapas de Rendimiento":
     for col_base, col_p90 in [
         ('Pases_Clave', 'PasesClave_P90'),
         ('Asistencias', 'Asistencias_P90'),
-        ('Quites (Tackles)', 'Quites_P90'),
+        ('Quites', 'Quites_P90'),
         ('Intercepciones', 'Inter_P90'),
         ('Goles', 'Goles_P90'),
     ]:
-        if col_base in df_p90.columns:
-            df_p90[col_p90] = (df_p90[col_base] / df_p90['Minutos'].replace(0, 1)) * 90
+        df_p90[col_p90] = (df_p90[col_base] / df_p90['Minutos'].replace(0, 1)) * 90
 
     def scatter_cuadrantes(df, x_col, y_col, x_label, y_label, title):
-        if x_col not in df.columns or y_col not in df.columns:
-            return go.Figure()
-        
         x_mean = df[x_col].mean()
         y_mean = df[y_col].mean()
         fig = px.scatter(
@@ -1050,10 +1075,8 @@ elif menu == "Análisis Individual":
         df_j = df_raw[df_raw['Jugador'] == jugador_sel].copy()
         pos = df_j['Posición'].mode()[0] if 'Posición' in df_j.columns and not df_j['Posición'].isnull().all() else "—"
         min_tot = int(df_j['Minutos'].sum())
-        prom = df_j['Nota SofaScore'].mean()
-        
-        # Omitimos partidos sin nota solo para no arruinar el gráfico de evolución, pero mostramos total real
-        parts = df_j[df_j['Minutos'] > 0]['Partido'].count() 
+        prom = df_j['Nota SofaScore'].mean()   # mean() ignora NaN → correcto
+        parts = df_j['Partido'].nunique()       # ← CORREGIDO: nunique en vez de len
 
         st.markdown(f"""
         <div style="background:linear-gradient(135deg,#111827,#1F2937);border-left:4px solid #D0021B;
@@ -1072,33 +1095,30 @@ elif menu == "Análisis Individual":
         """, unsafe_allow_html=True)
 
         st.markdown("<div class='section-title'>📈 EVOLUCIÓN DE NOTAS</div>", unsafe_allow_html=True)
-        df_j_notas = df_j.dropna(subset=['Nota SofaScore'])
-        
-        if not df_j_notas.empty:
-            color_barras = ['#D0021B' if n >= prom else '#9CA3AF' for n in df_j_notas['Nota SofaScore']]
-            fig_l = go.Figure()
-            fig_l.add_trace(go.Bar(
-                x=df_j_notas['Partido'],
-                y=df_j_notas['Nota SofaScore'],
-                marker_color=color_barras,
-                text=df_j_notas['Nota SofaScore'].apply(lambda n: f"{n:.1f}"),
-                textposition="outside",
-                textfont=dict(family="Bebas Neue", size=16),
-                hovertemplate="<b>%{x}</b><br>Nota: %{y:.1f}<extra></extra>",
-            ))
-            fig_l.add_hline(
-                y=prom, line_dash="dot", line_color="#D0021B", line_width=2,
-                annotation_text=f"Promedio: {prom:.2f}",
-                annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"),
-                annotation_position="top right",
-            )
-            apply_plotly_style(fig_l, yaxis_title="Nota SofaScore")
-            fig_l.update_layout(
-                yaxis=dict(range=[4, 10.5]),
-                xaxis=dict(tickangle=-30),
-                height=340,
-            )
-            st.plotly_chart(fig_l, use_container_width=True)
+        color_barras = ['#D0021B' if n >= prom else '#9CA3AF' for n in df_j['Nota SofaScore']]
+        fig_l = go.Figure()
+        fig_l.add_trace(go.Bar(
+            x=df_j['Partido'],
+            y=df_j['Nota SofaScore'],
+            marker_color=color_barras,
+            text=df_j['Nota SofaScore'].apply(lambda n: f"{n:.1f}" if pd.notna(n) else ""),
+            textposition="outside",
+            textfont=dict(family="Bebas Neue", size=16),
+            hovertemplate="<b>%{x}</b><br>Nota: %{y:.1f}<extra></extra>",
+        ))
+        fig_l.add_hline(
+            y=prom, line_dash="dot", line_color="#D0021B", line_width=2,
+            annotation_text=f"Promedio: {prom:.2f}",
+            annotation_font=dict(family="Rajdhani", size=12, color="#D0021B"),
+            annotation_position="top right",
+        )
+        apply_plotly_style(fig_l, yaxis_title="Nota SofaScore")
+        fig_l.update_layout(
+            yaxis=dict(range=[4, 10.5]),
+            xaxis=dict(tickangle=-30),
+            height=340,
+        )
+        st.plotly_chart(fig_l, use_container_width=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -1181,7 +1201,6 @@ elif menu == "Estadísticas de Equipo":
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    # ACÁ SE USA LA FUNCIÓN QUE TE TIRABA ERROR
     df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
     
     if not df_equipo.empty:
@@ -1191,7 +1210,6 @@ elif menu == "Estadísticas de Equipo":
             local_col   = cols[1]
             rival_col   = cols[2]
             
-            # Limpiamos el % para que la gráfica no devuelva None/NaN
             df_equipo[local_col] = pd.to_numeric(df_equipo[local_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
             df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
             
@@ -1363,8 +1381,8 @@ elif menu == "Cara a Cara":
         efect_pases = efect_pases if not pd.isna(efect_pases) else 0
         return {
             'Mins': mins,
-            'Partidos': data['Minutos'].apply(lambda x: 1 if x > 0 else 0).sum(),
-            'Nota': data['Nota SofaScore'].mean(),
+            'Partidos': data['Partido'].nunique(),   # ← CORREGIDO: nunique
+            'Nota': data['Nota SofaScore'].mean(),    # mean() ignora NaN → ok
             'Goles':   (data['Goles'].sum() / mins * 90),
             'Asist':   (data['Asistencias'].sum() / mins * 90),
             'KP':      (data['Pases Clave'].sum() / mins * 90),
@@ -1526,7 +1544,7 @@ elif menu == "Cara a Cara":
         })
         st.dataframe(datos_tabla, hide_index=True, use_container_width=True)
 
-# ─── HISTORIAL GENERAL (NUEVO EN HERRAMIENTAS) ────────────────────────────────
+# ─── HISTORIAL GENERAL ────────────────────────────────────────────────────────
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
     
