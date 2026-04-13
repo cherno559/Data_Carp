@@ -432,6 +432,23 @@ anios_disponibles = sorted(list(temporadas_dict.keys()), reverse=True)
 # ── CARGA DE DATOS ────────────────────────────────────────────────────────────
 @st.cache_data
 def cargar_datos_completos(ruta_excel):
+    """
+    Carga todas las hojas del Excel y las concatena en un único DataFrame.
+
+    CORRECCIONES vs versión anterior:
+    ─────────────────────────────────
+    1. Se mantienen TODAS las filas con nombre de jugador válido, aunque la
+       nota sea NaN o 0.  Así el conteo de partidos (Partido nunique) es
+       correcto para jugadores como Driussi o Pezzella que a veces no tienen
+       nota registrada en algún partido.
+
+    2. La columna 'Nota SofaScore' se convierte a numérico y los valores
+       inválidos quedan como NaN (no se eliminan las filas).  El promedio
+       posterior usa mean() que ignora NaN automáticamente.
+
+    3. Para métricas numéricas opcionales se rellena NaN con 0 solo en esas
+       columnas, sin tocar la nota.
+    """
     if not ruta_excel.exists():
         return pd.DataFrame(), f"❌ No se encontró el archivo: {ruta_excel.name}"
     try:
@@ -443,20 +460,36 @@ def cargar_datos_completos(ruta_excel):
                 continue
             df = pd.read_excel(ruta_excel, sheet_name=hoja)
             df.columns = df.columns.astype(str).str.strip()
-            if 'Jugador' not in df.columns or 'Nota SofaScore' not in df.columns:
+
+            # Necesitamos al menos la columna Jugador
+            if 'Jugador' not in df.columns:
                 continue
+
             df['Jugador'] = df['Jugador'].astype(str).str.strip()
+
+            # ── FIX 1: solo descartamos filas sin nombre de jugador ──────────
+            df = df[df['Jugador'].notna() & (df['Jugador'] != "") & (df['Jugador'] != "nan")]
+
+            # La columna de nota puede no existir en algunas hojas especiales
+            if 'Nota SofaScore' not in df.columns:
+                continue
+
+            # ── FIX 2: convertimos a numérico sin descartar la fila ──────────
             df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
-            df = df.dropna(subset=['Jugador', 'Nota SofaScore'])
-            df = df[(df['Jugador'] != "") & (df['Nota SofaScore'] > 0)]
+            # Solo eliminamos filas donde el jugador tiene nota 0 explícita
+            # (valor ingresado a mano) pero NO donde es NaN (partido sin dato)
+            df = df[~(df['Nota SofaScore'] == 0)]
+
             cols_num = ['Minutos', 'Goles', 'Asistencias', 'Pases Clave',
                         'Quites (Tackles)', 'Intercepciones', 'Tiros Totales', 'Efectividad Pases']
             for col in cols_num:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+
             df['Hoja_Original'] = hoja
             df['Partido'] = hoja
             partes.append(df)
+
         return pd.concat(partes, ignore_index=True) if partes else pd.DataFrame(), "OK"
     except Exception as e:
         return pd.DataFrame(), f"Error al cargar {ruta_excel.name}: {str(e)}"
@@ -474,7 +507,6 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
     except:
         return None
 
-# ¡FUNCIÓN REPARADA Y AGREGADA AQUÍ!
 @st.cache_data
 def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
     try:
@@ -703,13 +735,20 @@ if estado != "OK":
 if 'Efectividad Pases' in df_raw.columns:
     df_raw['Efectividad Pases'] = df_raw['Efectividad Pases'].replace(0, np.nan)
 
-# 1. Obtenemos la posición más frecuente de cada jugador para no dividir sus partidos
-posiciones = df_raw.groupby('Jugador')['Posición'].agg(lambda x: x.mode()[0] if not x.mode().empty else '—').reset_index()
+# ── AGRUPACIÓN CORREGIDA ──────────────────────────────────────────────────────
+# 1. Posición más frecuente por jugador
+posiciones = df_raw.groupby('Jugador')['Posición'].agg(
+    lambda x: x.mode()[0] if not x.mode().empty else '—'
+).reset_index()
 
-# 2. Agrupamos SOLO por Jugador (esto soluciona el problema de Driussi con posiciones múltiples)
+# 2. Agrupamos solo por Jugador.
+#    - Partidos: cantidad de hojas/partidos distintos en que aparece (nunique)
+#      ── FIX PRINCIPAL: antes usaba count() sobre Nota SofaScore, lo que
+#         excluía partidos donde la nota era NaN (ej. Driussi, Pezzella).
+#    - Promedio: mean() ignora NaN automáticamente → correcto.
 df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
-    Partidos=('Nota SofaScore', 'count'),
-    Promedio=('Nota SofaScore', 'mean'),
+    Partidos=('Partido', 'nunique'),          # ← CORREGIDO: nunique en vez de count
+    Promedio=('Nota SofaScore', 'mean'),      # mean ignora NaN → ok
     Minutos=('Minutos', 'sum'),
     Goles=('Goles', 'sum'),
     Asistencias=('Asistencias', 'sum'),
@@ -720,16 +759,22 @@ df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
     Efectividad_Pases=('Efectividad Pases', 'mean')
 )
 
-# 3. Le pegamos la posición de vuelta
+# 3. Pegamos la posición
 df_agrupado = df_agrupado.merge(posiciones, on='Jugador')
 
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
 df_agrupado['Efectividad_Pases'] = df_agrupado['Efectividad_Pases'].round(1).fillna(0)
 
+# Forma: últimas 5 notas (solo donde hay nota válida)
 df_forma = df_raw.groupby('Jugador')['Nota SofaScore'].apply(
-    lambda x: " | ".join([f"{n:.1f}" for n in list(x)[-5:]])
+    lambda x: " | ".join([f"{n:.1f}" for n in x.dropna().tolist()[-5:]])
 ).reset_index(name='Forma (Últ. 5)')
 df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
+
+# ── Total de partidos del archivo (para el resumen general) ───────────────────
+# FIX: contamos hojas únicas (partidos reales) en lugar de filas únicas en
+# la columna Partido, que podía contar mal si un partido tenía varias posiciones.
+total_partidos_temporada = df_raw['Partido'].nunique()
 
 
 # =============================================================================
@@ -740,10 +785,11 @@ df_agrupado = df_agrupado.merge(df_forma, on='Jugador', how='left')
 if menu == "Resumen General":
     page_header("🐔", f"PANEL GENERAL", f"Temporada {temporada_sel}")
 
-    total_partidos = df_raw['Partido'].nunique()
+    # ── FIX: usamos la variable pre-calculada con nunique ────────────────────
+    total_partidos  = total_partidos_temporada
     promedio_equipo = df_raw['Nota SofaScore'].mean()
-    total_goles = df_agrupado['Goles'].sum()
-    total_asist = df_agrupado['Asistencias'].sum()
+    total_goles     = df_agrupado['Goles'].sum()
+    total_asist     = df_agrupado['Asistencias'].sum()
 
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Partidos Analizados", int(total_partidos))
@@ -1029,8 +1075,8 @@ elif menu == "Análisis Individual":
         df_j = df_raw[df_raw['Jugador'] == jugador_sel].copy()
         pos = df_j['Posición'].mode()[0] if 'Posición' in df_j.columns and not df_j['Posición'].isnull().all() else "—"
         min_tot = int(df_j['Minutos'].sum())
-        prom = df_j['Nota SofaScore'].mean()
-        parts = len(df_j)
+        prom = df_j['Nota SofaScore'].mean()   # mean() ignora NaN → correcto
+        parts = df_j['Partido'].nunique()       # ← CORREGIDO: nunique en vez de len
 
         st.markdown(f"""
         <div style="background:linear-gradient(135deg,#111827,#1F2937);border-left:4px solid #D0021B;
@@ -1055,7 +1101,7 @@ elif menu == "Análisis Individual":
             x=df_j['Partido'],
             y=df_j['Nota SofaScore'],
             marker_color=color_barras,
-            text=df_j['Nota SofaScore'].apply(lambda n: f"{n:.1f}"),
+            text=df_j['Nota SofaScore'].apply(lambda n: f"{n:.1f}" if pd.notna(n) else ""),
             textposition="outside",
             textfont=dict(family="Bebas Neue", size=16),
             hovertemplate="<b>%{x}</b><br>Nota: %{y:.1f}<extra></extra>",
@@ -1155,7 +1201,6 @@ elif menu == "Estadísticas de Equipo":
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     
-    # ACÁ SE USA LA FUNCIÓN QUE TE TIRABA ERROR
     df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
     
     if not df_equipo.empty:
@@ -1165,7 +1210,6 @@ elif menu == "Estadísticas de Equipo":
             local_col   = cols[1]
             rival_col   = cols[2]
             
-            # Limpiamos el % para que la gráfica no devuelva None/NaN
             df_equipo[local_col] = pd.to_numeric(df_equipo[local_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
             df_equipo[rival_col] = pd.to_numeric(df_equipo[rival_col].astype(str).str.replace('%', '', regex=False), errors='coerce')
             
@@ -1337,8 +1381,8 @@ elif menu == "Cara a Cara":
         efect_pases = efect_pases if not pd.isna(efect_pases) else 0
         return {
             'Mins': mins,
-            'Partidos': data['Nota SofaScore'].count(),
-            'Nota': data['Nota SofaScore'].mean(),
+            'Partidos': data['Partido'].nunique(),   # ← CORREGIDO: nunique
+            'Nota': data['Nota SofaScore'].mean(),    # mean() ignora NaN → ok
             'Goles':   (data['Goles'].sum() / mins * 90),
             'Asist':   (data['Asistencias'].sum() / mins * 90),
             'KP':      (data['Pases Clave'].sum() / mins * 90),
@@ -1500,7 +1544,7 @@ elif menu == "Cara a Cara":
         })
         st.dataframe(datos_tabla, hide_index=True, use_container_width=True)
 
-# ─── HISTORIAL GENERAL (NUEVO EN HERRAMIENTAS) ────────────────────────────────
+# ─── HISTORIAL GENERAL ────────────────────────────────────────────────────────
 elif menu == "Historial General":
     page_header("🌍", "HISTORIAL GENERAL", "Historial histórico vs todos los rivales registrados")
     
