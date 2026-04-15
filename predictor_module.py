@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONSTANTES Y TABLA DE POSICIONES 2026 (SEGÚN TUS IMÁGENES)
+# TABLA DE POSICIONES 2026 (J 13)
 # ─────────────────────────────────────────────────────────────────────────────
 
 MONTECARLO_N = 10_000
@@ -19,38 +19,22 @@ EQUIPOS_PRIMERA_2026 = [
     "Central Córdoba", "Atl. Tucumán", "Newell's", "Riestra", "Aldosivi", "Estudiantes RC"
 ]
 
-# Datos exactos: J 13 | GF:GC
 DATOS_LIGA_MANUAL = {
-    "Ind. Rivadavia":  {"PJ": 13, "GF": 23, "GC": 13},
-    "River":           {"PJ": 13, "GF": 19, "GC": 9},
-    "Vélez":           {"PJ": 13, "GF": 15, "GC": 9},
-    "Estudiantes":     {"PJ": 13, "GF": 16, "GC": 7},
-    "Argentinos":      {"PJ": 13, "GF": 14, "GC": 10},
-    "Lanús":           {"PJ": 13, "GF": 18, "GC": 14},
-    "Belgrano":        {"PJ": 13, "GF": 13, "GC": 12},
-    "Boca Jrs.":       {"PJ": 13, "GF": 15, "GC": 8},
-    "Central":         {"PJ": 13, "GF": 15, "GC": 13},
-    "Talleres":        {"PJ": 13, "GF": 14, "GC": 12},
-    "Huracán":         {"PJ": 13, "GF": 15, "GC": 10},
-    "Unión":           {"PJ": 13, "GF": 19, "GC": 14},
-    "Defensa":         {"PJ": 13, "GF": 16, "GC": 12},
-    "Barracas":        {"PJ": 13, "GF": 13, "GC": 12},
-    "Tigre":           {"PJ": 13, "GF": 16, "GC": 12},
-    "Independiente":   {"PJ": 13, "GF": 19, "GC": 16},
-    "Racing":          {"PJ": 13, "GF": 15, "GC": 13},
-    "San Lorenzo":     {"PJ": 13, "GF": 12, "GC": 12},
-    "Instituto":       {"PJ": 13, "GF": 14, "GC": 15},
-    "Gimnasia":        {"PJ": 13, "GF": 15, "GC": 19},
-    "Platense":        {"PJ": 13, "GF": 7,  "GC": 8},
-    "Sarmiento":       {"PJ": 13, "GF": 11, "GC": 14},
-    "Banfield":        {"PJ": 13, "GF": 14, "GC": 17},
-    "Gimnasia (M)":    {"PJ": 13, "GF": 10, "GC": 16},
-    "Central Córdoba": {"PJ": 13, "GF": 6,  "GC": 16},
-    "Atl. Tucumán":    {"PJ": 13, "GF": 13, "GC": 18},
-    "Newell's":        {"PJ": 13, "GF": 10, "GC": 23},
-    "Riestra":         {"PJ": 13, "GF": 3,  "GC": 10},
-    "Aldosivi":        {"PJ": 13, "GF": 3,  "GC": 14},
-    "Estudiantes RC":  {"PJ": 13, "GF": 4,  "GC": 19}
+    "Ind. Rivadavia":  {"PJ": 13, "GF": 23, "GC": 13}, "River": {"PJ": 13, "GF": 19, "GC": 9},
+    "Vélez": {"PJ": 13, "GF": 15, "GC": 9}, "Estudiantes": {"PJ": 13, "GF": 16, "GC": 7},
+    "Argentinos": {"PJ": 13, "GF": 14, "GC": 10}, "Lanús": {"PJ": 13, "GF": 18, "GC": 14},
+    "Belgrano": {"PJ": 13, "GF": 13, "GC": 12}, "Boca Jrs.": {"PJ": 13, "GF": 15, "GC": 8},
+    "Central": {"PJ": 13, "GF": 15, "GC": 13}, "Talleres": {"PJ": 13, "GF": 14, "GC": 12},
+    "Huracán": {"PJ": 13, "GF": 15, "GC": 10}, "Unión": {"PJ": 13, "GF": 19, "GC": 14},
+    "Defensa": {"PJ": 13, "GF": 16, "GC": 12}, "Barracas": {"PJ": 13, "GF": 13, "GC": 12},
+    "Tigre": {"PJ": 13, "GF": 16, "GC": 12}, "Independiente": {"PJ": 13, "GF": 19, "GC": 16},
+    "Racing": {"PJ": 13, "GF": 15, "GC": 13}, "San Lorenzo": {"PJ": 13, "GF": 12, "GC": 12},
+    "Instituto": {"PJ": 13, "GF": 14, "GC": 15}, "Gimnasia": {"PJ": 13, "GF": 15, "GC": 19},
+    "Platense": {"PJ": 13, "GF": 7,  "GC": 8}, "Sarmiento": {"PJ": 13, "GF": 11, "GC": 14},
+    "Banfield": {"PJ": 13, "GF": 14, "GC": 17}, "Gimnasia (M)": {"PJ": 13, "GF": 10, "GC": 16},
+    "Central Córdoba": {"PJ": 13, "GF": 6,  "GC": 16}, "Atl. Tucumán": {"PJ": 13, "GF": 13, "GC": 18},
+    "Newell's": {"PJ": 13, "GF": 10, "GC": 23}, "Riestra": {"PJ": 13, "GF": 3,  "GC": 10},
+    "Aldosivi": {"PJ": 13, "GF": 3,  "GC": 14}, "Estudiantes RC": {"PJ": 13, "GF": 4,  "GC": 19}
 }
 
 RED, GRAY, LIGHT_B = "#D0021B", "#374151", "rgba(249,250,251,1)"
@@ -69,10 +53,9 @@ def obtener_estadisticas_liga():
 def extraer_plantilla_river(ruta_excel_str):
     ruta = Path(ruta_excel_str)
     xl = pd.ExcelFile(ruta)
-    hojas_omitir = {"Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"}
     filas = []
     for hoja in xl.sheet_names:
-        if hoja in hojas_omitir: continue
+        if "Promedios" in hoja or "Resumen" in hoja: continue
         try:
             df_h = pd.read_excel(ruta, sheet_name=hoja)
             df_h.columns = df_h.columns.astype(str).str.strip()
@@ -82,21 +65,18 @@ def extraer_plantilla_river(ruta_excel_str):
             filas.append(df_h)
         except: continue
     df_todos = pd.concat(filas, ignore_index=True)
-    for c in ["Goles", "Intercepciones", "Nota SofaScore"]:
-        df_todos[c] = pd.to_numeric(df_todos.get(c, 0), errors="coerce").fillna(0)
     agg = df_todos.groupby("Jugador", as_index=False).agg(
         Posicion = ("Posición", lambda x: x.mode()[0] if not x.mode().empty else "Mediocampista"),
         Minutos  = ("Minutos", "sum"),
         Nota     = ("Nota SofaScore", lambda x: x[x>0].mean() if not x[x>0].empty else 6.8),
-        Goles    = ("Goles", "sum"),
-        Inter    = ("Intercepciones", "sum")
+        Goles    = ("Goles", "sum")
     )
     agg["xG_p90"] = (agg["Goles"] / (agg["Minutos"]/90)).round(3)
     agg["forma"] = (agg["Nota"] / 7.0).clip(0.85, 1.15)
     return agg[agg["Minutos"] >= 1].reset_index(drop=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 2 ── LÓGICA DE SIMULACIÓN Y GOLEADORES
+# MÓDULO 2 ── LÓGICA DE SIMULACIÓN Y GOLEADORES (CON SMOOTHING)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
@@ -105,9 +85,12 @@ def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
     riv_base = df_liga[df_liga["equipo"] == "River"].iloc[0]
     fa_rival, fd_rival = (r_data["GF"]/r_data["PJ"])/mgf, (r_data["GC"]/r_data["PJ"])/mgf
     fa_river, fd_river = (riv_base["GF"]/riv_base["PJ"])/mgf, (riv_base["GC"]/riv_base["PJ"])/mgf
+    
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)]
-    mult_atk = 1.0 + ((df_xi["xG_p90"].mean() / df_plantilla["xG_p90"].mean() - 1.0) * 0.4)
+    # Aumentamos un poco la sensibilidad del XI (de 0.4 a 0.5)
+    mult_atk = 1.0 + ((df_xi["xG_p90"].mean() / df_plantilla["xG_p90"].mean() - 1.0) * 0.5)
     forma = 1.0 + ((df_xi["forma"].mean() - 1.0) * 0.5)
+    
     V = 1.15
     lam_r = fa_river * mult_atk * fd_rival * mgf * forma * (V if es_local else 1.0)
     lam_v = fa_rival * fd_river * mgf * (1/forma) * (1.0 if es_local else V)
@@ -116,8 +99,9 @@ def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
 def simular_montecarlo(lam_r, lam_v):
     rng = np.random.default_rng(42)
     gr, gv = rng.poisson(lam_r, MONTECARLO_N), rng.poisson(lam_v, MONTECARLO_N)
+    # Ajuste Dixon-Coles suavizado (0.18 en vez de 0.28) para que la victoria pese más
     for i in range(MONTECARLO_N):
-        if ((gr[i]==1 and gv[i]==0) or (gr[i]==0 and gv[i]==1)) and rng.random() < 0.28:
+        if ((gr[i]==1 and gv[i]==0) or (gr[i]==0 and gv[i]==1)) and rng.random() < 0.18:
             gr[i], gv[i] = 1, 1
     res = []
     for r in range(7):
@@ -127,18 +111,29 @@ def simular_montecarlo(lam_r, lam_v):
 
 def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
+    
+    # LAPLACE SMOOTHING: Les damos una chance mínima a todos para que nadie tenga 0.0%
+    def amenaza_base(pos):
+        if "Delantero" in pos: return 0.05
+        if "Mediocampista" in pos: return 0.03
+        return 0.015 # Defensores (mínima chance de córner/rebote)
+    
+    # Peso de posición para priorizar visualmente a los atacantes
     def peso_pos(p):
         if "Delantero" in p: return 1.3
         if "Mediocampista" in p: return 1.0
-        return 0.65 # Ajuste Montiel (Defensores pesan menos)
-    df_xi["p_pos"] = df_xi["Posicion"].apply(peso_pos)
-    df_xi["p_final"] = df_xi["xG_p90"] * df_xi["p_pos"]
-    total = df_xi["p_final"].sum() if df_xi["p_final"].sum() > 0 else 1
-    df_xi["% Prob. Gol"] = ((df_xi["p_final"] / total) * (1 - np.exp(-lam_r)) * 100).round(1)
+        return 0.7 
+    
+    df_xi["amenaza"] = (df_xi["xG_p90"] + df_xi["Posicion"].apply(amenaza_base)) * df_xi["Posicion"].apply(peso_pos)
+    total = df_xi["amenaza"].sum() if df_xi["amenaza"].sum() > 0 else 1
+    
+    # Probabilidad de que el jugador marque al menos un gol
+    df_xi["% Prob. Gol"] = ((df_xi["amenaza"] / total) * (1 - np.exp(-lam_r)) * 100).round(1)
+    
     return df_xi[["Jugador", "Posicion", "xG_p90", "% Prob. Gol"]].sort_values("% Prob. Gol", ascending=False)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 3 ── GRÁFICOS (HEATMAP CON NÚMEROS)
+# MÓDULO 3 ── VISUALIZACIONES
 # ─────────────────────────────────────────────────────────────────────────────
 
 def fig_heatmap(sim, rival, style_fn):
@@ -201,9 +196,5 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
             st.dataframe(obtener_tabla_goleadores(titulares, df_plantilla, lr).rename(columns={"xG_p90": "xG/90"}), use_container_width=True, hide_index=True)
         with t3:
             st.plotly_chart(fig_heatmap(sim, rival_sel, apply_plotly_style_fn), use_container_width=True)
-            top3 = sim["df_resultados"].sort_values("prob", ascending=False).head(3)
-            cols = st.columns(3)
-            for i, (_, r) in enumerate(top3.iterrows()):
-                cols[i].markdown(f"<div style='background:#F9FAFB; padding:10px; border-radius:8px; text-align:center;'><div style='font-family:Bebas Neue; font-size:24px;'>{int(r.River)} - {int(r.Rival)}</div><div style='font-family:Rajdhani; font-size:12px;'>{r.prob*100:.1f}% CHANCE</div></div>", unsafe_allow_html=True)
         with t4:
             st.dataframe(df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador","Posicion","Nota","xG_p90"]].sort_values("Posicion"), use_container_width=True, hide_index=True)
