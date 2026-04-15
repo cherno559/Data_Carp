@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONSTANTES Y LISTA OFICIAL
+# CONSTANTES Y LISTA OFICIAL 30 EQUIPOS
 # ─────────────────────────────────────────────────────────────────────────────
 
 MONTECARLO_N = 10_000
@@ -50,10 +50,7 @@ def obtener_estadisticas_liga() -> tuple[pd.DataFrame, bool]:
         df_liga = df[[col_map["equipo"], col_map["PJ"], col_map["GF"], col_map["GC"]]].copy()
         df_liga.columns = ["equipo", "PJ", "GF", "GC"]
         df_liga = df_liga[df_liga["equipo"].isin(EQUIPOS_PRIMERA_2026)]
-        
-        for c in ["PJ", "GF", "GC"]: 
-            df_liga[c] = pd.to_numeric(df_liga[c], errors="coerce")
-        
+        for c in ["PJ", "GF", "GC"]: df_liga[c] = pd.to_numeric(df_liga[c], errors="coerce")
         return df_liga.reset_index(drop=True), True
     except:
         data = [{"equipo": e, "PJ": 20, "GF": 20, "GC": 20} for e in EQUIPOS_PRIMERA_2026]
@@ -65,7 +62,6 @@ def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
     xl = pd.ExcelFile(ruta)
     hojas_omitir = {"Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"}
     filas = []
-
     for hoja in xl.sheet_names:
         if hoja in hojas_omitir: continue
         try:
@@ -76,7 +72,6 @@ def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
             df_h = df_h[(df_h["Jugador"] != "") & (df_h["Minutos"] > 0)].copy()
             filas.append(df_h)
         except: continue
-
     df_todos = pd.concat(filas, ignore_index=True)
     for c in ["Goles", "Intercepciones", "Nota SofaScore"]:
         df_todos[c] = pd.to_numeric(df_todos.get(c, 0), errors="coerce").fillna(0)
@@ -95,7 +90,7 @@ def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
     return agg[agg["Minutos"] >= 1].reset_index(drop=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 2 ── LÓGICA DE CÁLCULO
+# MÓDULO 2 ── CÁLCULO Y GOLEADORES
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
@@ -125,54 +120,49 @@ def simular_montecarlo(lam_r, lam_v):
     for i in range(MONTECARLO_N):
         if ((gr[i]==1 and gv[i]==0) or (gr[i]==0 and gv[i]==1)) and rng.random() < 0.28:
             gr[i], gv[i] = 1, 1
-    
     res = []
     for r in range(7):
         for v in range(7):
             res.append({"River": r, "Rival": v, "prob": float(np.mean((gr==r) & (gv==v)))})
-            
     return {"prob_victoria": float(np.mean(gr > gv)), "prob_empate": float(np.mean(gr == gv)), 
             "prob_derrota": float(np.mean(gr < gv)), "df_resultados": pd.DataFrame(res), 
             "goles_river": gr, "goles_rival": gv, "lambda_r": lam_r, "lambda_v": lam_v, "n": MONTECARLO_N}
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 3 ── VISUALIZACIONES Y CRÓNICA
-# ─────────────────────────────────────────────────────────────────────────────
-
-def fig_barras_1x2(sim, rival, style_fn):
-    cats, vals, cols = ["Victoria River", "Empate", "Derrota River"], [sim["prob_victoria"]*100, sim["prob_empate"]*100, sim["prob_derrota"]*100], [RED, "#9CA3AF", "#1A4A8B"]
-    fig = go.Figure(go.Bar(x=vals, y=cats, orientation="h", marker_color=cols, text=[f"{v:.1f}%" for v in vals], textposition="outside", textfont=dict(family="Bebas Neue", size=18)))
-    fig.update_layout(font=dict(family="Rajdhani"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B, height=260, showlegend=False, title=f"Probabilidades vs {rival}")
-    if style_fn: style_fn(fig)
-    return fig
-
 def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
-    """Calcula la probabilidad individual de gol de cada titular."""
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
+    # Ajuste de posición: Ponderamos más a delanteros y medios para evitar el sesgo de penales en defensores
+    def get_weight(pos):
+        if "Delantero" in pos: return 1.2
+        if "Mediocampista" in pos: return 1.0
+        return 0.75 # Defensores y arqueros tienen menos chance natural
+
+    df_xi["peso_pos"] = df_xi["Posicion"].apply(get_weight)
+    df_xi["score_final"] = df_xi["xG_p90"] * df_xi["peso_pos"]
     
-    # Probabilidad individual basada en xG_p90 respecto al Lambda esperado de River
-    total_xg = df_xi["xG_p90"].sum() if df_xi["xG_p90"].sum() > 0 else 1
-    
-    df_xi["Prob. Gol"] = (df_xi["xG_p90"] / total_xg) * (1 - np.exp(-lam_r))
+    total = df_xi["score_final"].sum() if df_xi["score_final"].sum() > 0 else 1
+    df_xi["Prob. Gol"] = (df_xi["score_final"] / total) * (1 - np.exp(-lam_r))
     df_xi["Prob. Gol"] = (df_xi["Prob. Gol"] * 100).round(1)
     
     return df_xi[["Jugador", "Posicion", "xG_p90", "Prob. Gol"]].sort_values("Prob. Gol", ascending=False)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 4 ── RENDER PRINCIPAL
+# MÓDULO 3 ── RENDER Y ESTILOS
 # ─────────────────────────────────────────────────────────────────────────────
 
 def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
     st.markdown("""<style>
-    .pred-kpi { background: #111827; border-left: 4px solid #D0021B; border-radius: 10px; padding: 15px; text-align: center; margin-bottom: 10px; }
-    .pred-kpi .label { font-family: 'Rajdhani'; font-size: 10px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1.5px; }
-    .pred-kpi .valor { font-family: 'Bebas Neue'; font-size: 42px; color: #D0021B; line-height: 1; }
+    .pred-kpi { background: #111827; border: 1px solid #2A2A2A; border-left: 4px solid #D0021B; border-radius: 10px; padding: 16px 20px; text-align: center; }
+    .pred-kpi .label { font-family: 'Rajdhani', sans-serif; font-size: 10px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+    .pred-kpi .valor { font-family: 'Bebas Neue', cursive; font-size: 44px; line-height: 1; color: #D0021B; }
     .pred-kpi.empate .valor { color: #9CA3AF; } .pred-kpi.derrota .valor { color: #1A4A8B; }
+    .badge-datos { display: inline-block; padding: 3px 12px; border-radius: 20px; font-family: 'Rajdhani'; font-size: 12px; font-weight: 700; background: #1a4d1a; color: #66ff66; margin-bottom: 12px; }
     </style>""", unsafe_allow_html=True)
 
     df_liga, _ = obtener_estadisticas_liga()
     df_plantilla = extraer_plantilla_river(str(ruta_excel))
     
+    st.markdown('<span class="badge-datos">✅ Datos Inteligencia CARP Cargados</span>', unsafe_allow_html=True)
+
     c1, c2 = st.columns([2,1])
     rival_sel = c1.selectbox("🆚 Seleccioná el Rival", sorted([e for e in df_liga["equipo"] if e != "River Plate"]))
     es_local = c2.radio("📍 Condición", ["Monumental 🏟️", "Visitante ✈️"], horizontal=True) == "Monumental 🏟️"
@@ -186,30 +176,34 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
         lr, lv = calcular_lambdas(df_liga, rival_sel, titulares, df_plantilla, es_local)
         sim = simular_montecarlo(lr, lv)
 
-        st.markdown(f"### 📊 Análisis Predictivo: River vs {rival_sel}")
+        st.markdown(f"### 📊 Análisis de Probabilidades: River vs {rival_sel}")
         k1, k2, k3, k4, k5 = st.columns(5)
         for c, l, v, t in [(k1,"Victoria",f"{sim['prob_victoria']*100:.1f}%",""), (k2,"Empate",f"{sim['prob_empate']*100:.1f}%","empate"), (k3,"Derrota",f"{sim['prob_derrota']*100:.1f}%","derrota"), (k4,"λ River",f"{lr:.2f}",""), (k5,"λ Rival",f"{lv:.2f}","")]:
             c.markdown(f'<div class="pred-kpi {t}"><div class="label">{l}</div><div class="valor">{v}</div></div>', unsafe_allow_html=True)
 
-        t1, t2, t3, t4 = st.tabs(["📊 Probabilidades", "🎯 Resultados Exactos", "⚽ Posibles Goleadores", "🔬 Detalle XI"])
+        tab1, tab2, tab3, tab4 = st.tabs(["📊 Gráficos", "⚽ Goleadores", "🎯 Marcadores", "🔬 Detalle XI"])
         
-        with t1: 
-            st.plotly_chart(fig_barras_1x2(sim, rival_sel, apply_plotly_style_fn), use_container_width=True)
+        with tab1:
+            fig = go.Figure()
+            fig.add_trace(go.Bar(x=[sim["prob_victoria"]*100, sim["prob_empate"]*100, sim["prob_derrota"]*100], y=["Victoria River", "Empate", "Derrota River"], orientation="h", marker_color=[RED, "#9CA3AF", "#1A4A8B"]))
+            fig.update_layout(title="Probabilidades 1X2", font=dict(family="Rajdhani"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
+            if apply_plotly_style_fn: apply_plotly_style_fn(fig)
+            st.plotly_chart(fig, use_container_width=True)
             
-        with t2:
+        with tab2:
+            st.markdown("<div style='font-family:Bebas Neue;font-size:22px;color:#1F2937;margin-bottom:10px;'>🏆 PROBABILIDAD DE GOL INDIVIDUAL</div>", unsafe_allow_html=True)
+            df_goles = obtener_tabla_goleadores(titulares, df_plantilla, lr)
+            st.dataframe(df_goles.rename(columns={"xG_p90": "xG/90", "Prob. Gol": "% Prob. Gol"}), use_container_width=True, hide_index=True)
+            st.info("💡 El porcentaje tiene en cuenta el xG/90 y la posición (se pondera más a delanteros).")
+
+        with tab3:
             z = np.zeros((7,7))
             for _, r in sim["df_resultados"].iterrows(): 
                 if r.River < 7 and r.Rival < 7: z[int(r.Rival)][int(r.River)] = r.prob * 100
             fig_h = go.Figure(go.Heatmap(z=z, x=[str(i) for i in range(7)], y=[str(i) for i in range(7)], colorscale="Reds"))
-            fig_h.update_layout(title="Mapa de Marcadores", xaxis_title="River", yaxis_title=rival_sel, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
+            fig_h.update_layout(title="Mapa de Resultados", xaxis_title="Goles River", yaxis_title=rival_sel, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
             if apply_plotly_style_fn: apply_plotly_style_fn(fig_h)
             st.plotly_chart(fig_h, use_container_width=True)
             
-        with t3:
-            st.markdown("<div style='font-family:Bebas Neue,cursive;font-size:20px;color:#1F2937;letter-spacing:2px;margin-bottom:12px;'>🏆 PROBABILIDAD INDIVIDUAL DE GOL</div>", unsafe_allow_html=True)
-            df_goles = obtener_tabla_goleadores(titulares, df_plantilla, lr)
-            st.dataframe(df_goles.rename(columns={"xG_p90": "xG/90", "Prob. Gol": "% Prob. Gol"}), use_container_width=True, hide_index=True)
-            st.info("💡 Calculado en base al xG/90 histórico de cada jugador y la debilidad defensiva del rival.")
-
-        with t4:
-            st.dataframe(df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador","Posicion","Nota","xG_p90","xGA_p90"]].sort_values("Posicion"), use_container_width=True, hide_index=True)
+        with tab4:
+            st.dataframe(df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador","Posicion","Nota","xG_p90"]].sort_values("Posicion"), use_container_width=True, hide_index=True)
