@@ -337,6 +337,7 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
 
     st.markdown("<br>", unsafe_allow_html=True)
     tab1, tab2, tab3, tab4 = st.tabs(["📊 Probabilidades 1X2", "🎯 Resultados Exactos", "📈 Distribución Goles", "🔬 Análisis del XI"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 Probabilidades 1X2", "🎯 Resultados Exactos", "📈 Distribución Goles", "🔬 Análisis del XI", "🔮 Crónica del Partido"])
 
     with tab1: st.plotly_chart(fig_barras_1x2(sim, rival_sel, apply_plotly_style_fn), use_container_width=True)
     with tab2:
@@ -349,3 +350,18 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
     with tab4:
         df_show = df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador", "Posicion", "Nota", "xG_p90", "xGA_p90"]].rename(columns={"Posicion": "Pos.", "Nota": "⭐ Nota", "xG_p90": "xG/90", "xGA_p90": "xGA/90"})
         st.dataframe(df_show.sort_values("Pos.").reset_index(drop=True), hide_index=True, use_container_width=True)
+        
+    with tab5:
+        st.markdown("<div style='font-family:Bebas Neue,cursive;font-size:22px;color:#1F2937;letter-spacing:2px;margin-bottom:16px;'>📖 SIMULACIÓN CANÓNICA</div>", unsafe_allow_html=True)
+        
+        g_r, g_v, cronica = generar_cronica_partido(sim, titulares, df_plantilla, rival_sel)
+        
+        st.markdown(f"<h3 style='text-align: center;'>River Plate {g_r} - {g_v} {rival_sel}</h3>", unsafe_allow_html=True)
+        st.markdown("---")
+        
+        if len(cronica) == 0:
+            st.info("⏱️ 90' - Final del partido. Un empate 0-0 muy cerrado. Las defensas superaron a los ataques.")
+        else:
+            for evento in cronica:
+                st.markdown(f"**⏱️ {evento['Minuto']}'** | {evento['Icono']} {evento['Evento']}")
+            st.markdown("**⏱️ 90'** | Final del partido.")
