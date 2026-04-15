@@ -707,7 +707,7 @@ with st.sidebar:
     st.markdown("<div class='sidebar-section-label'>Categoría</div>", unsafe_allow_html=True)
     categoria = st.radio(
         "",
-        ["🏆 Por Temporada", "🗓️ Por Fecha", "🔧 Herramientas", "🤖 Predictor"],
+        ["🏆 Por Temporada", "🗓️ Por Fecha", "🔧 Herramientas"],
         label_visibility="collapsed"
     )
 
@@ -721,10 +721,7 @@ with st.sidebar:
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
     elif categoria == "🔧 Herramientas":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Cara a Cara", "Historial General"], label_visibility="collapsed")
-    else:
-        # Predictor no tiene submenú
-        menu = "Predictor"
+        menu = st.radio("", ["Predictor de Partidos", "Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
 
@@ -743,7 +740,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 # ── PREDICTOR (sin cargar el resto de datos) ──────────────────────────────────
-if menu == "Predictor":
+if menu == "Predictor de Partidos":
     page_header("🤖", "PREDICTOR DE PARTIDOS", f"Poisson + Montecarlo · Temporada {temporada_sel}")
     render_predictor(EXCEL_ACTUAL, apply_plotly_style_fn=apply_plotly_style)
     st.markdown("<div class='footer'>Data CARP · Club Atlético River Plate · Análisis de Rendimiento</div>", unsafe_allow_html=True)
@@ -1085,8 +1082,8 @@ elif menu == "Estadísticas Individuales":
     mostrar_marcador(EXCEL_ACTUAL, hoja_orig)
     df_p = df_raw[df_raw['Partido'] == partido_sel].copy()
     if 'Pases (Comp/Tot)'   in df_p.columns: df_p['Pases Completados'] = df_p['Pases (Comp/Tot)'].apply(extraer_exitosos)
-    if 'Duelos (Gan/Tot)'   in df_p.columns: df_p['Duelos Ganados']    = df_p['Duelos (Gan/Tot)'].apply(extraer_exitosos)
-    if 'Regates (Exit/Tot)' in df_p.columns: df_p['Regates Exitosos']  = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
+    if 'Duelos (Gan/Tot)'   in df_p.columns: df_p['Duelos Ganados']     = df_p['Duelos (Gan/Tot)'].apply(extraer_exitosos)
+    if 'Regates (Exit/Tot)' in df_p.columns: df_p['Regates Exitosos']   = df_p['Regates (Exit/Tot)'].apply(extraer_exitosos)
     if 'Quites (Tackles)'   in df_p.columns: df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
     cols_num_ind = ['Efectividad Pases','Efectividad Duelos','Efectividad Regates','Tiros al Arco','Tiros Totales','Pases Clave','Intercepciones']
     for c in cols_num_ind:
@@ -1123,7 +1120,7 @@ elif menu == "Parado Táctico":
     else: st.info("No hay imagen táctica disponible para este partido.")
 
 # ─── MAPA DE TIROS ────────────────────────────────────────────────────────────
-elif menu == "Mapa de Tiros":
+elif menu == "Mapa de Tios":
     page_header("🎯", "MAPA DE TIROS", "Distribución de disparos por equipo")
     hojas = df_raw.drop_duplicates('Partido')[['Partido','Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
