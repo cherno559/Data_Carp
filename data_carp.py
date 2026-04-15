@@ -359,60 +359,6 @@ div.row-widget.stRadio > div {
     border-top: 1px solid var(--gray-200);
     margin-top: 48px;
 }
-
-/* === PREDICTOR STYLES (heredados del módulo) === */
-.pred-kpi {
-    background: #111827;
-    border: 1px solid #2A2A2A;
-    border-left: 4px solid #D0021B;
-    border-radius: 10px;
-    padding: 16px 20px;
-    text-align: center;
-}
-.pred-kpi .label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 10px;
-    color: #9CA3AF;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 700;
-}
-.pred-kpi .valor {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 44px;
-    line-height: 1;
-    color: #D0021B;
-}
-.pred-kpi .lambda-val {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 28px;
-    line-height: 1;
-    color: #C9A84C;
-}
-.pred-kpi.empate .valor { color: #9CA3AF; }
-.pred-kpi.derrota .valor { color: #1A4A8B; }
-.pred-info {
-    background: rgba(208,2,27,0.06);
-    border-left: 3px solid #D0021B;
-    border-radius: 0 6px 6px 0;
-    padding: 10px 16px;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    color: #4B5563;
-    font-weight: 500;
-    margin-bottom: 12px;
-}
-.badge-datos {
-    display: inline-block;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    background: #1a4d1a;
-    color: #66ff66;
-    margin-bottom: 12px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -1120,7 +1066,7 @@ elif menu == "Parado Táctico":
     else: st.info("No hay imagen táctica disponible para este partido.")
 
 # ─── MAPA DE TIROS ────────────────────────────────────────────────────────────
-elif menu == "Mapa de Tios":
+elif menu == "Mapa de Tiros":
     page_header("🎯", "MAPA DE TIROS", "Distribución de disparos por equipo")
     hojas = df_raw.drop_duplicates('Partido')[['Partido','Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Fecha:", list(hojas.keys()))
