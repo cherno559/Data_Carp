@@ -27,24 +27,40 @@ LIGHT_B = "rgba(249,250,251,1)"
 # MÓDULO 1 ── DATA MACRO: EXTRACCIÓN DESDE INTERNET (WEB SCRAPING)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Promedios históricos por si falla la conexión a internet (Fallback)
+# PROMEDIOS HISTÓRICOS (FALLBACK) - LOS 28 EQUIPOS DE PRIMERA DIVISIÓN
 FALLBACK_LIGA = {
-    "River Plate": {"PJ": 20, "GF": 32, "GC": 14}, "Boca Juniors": {"PJ": 20, "GF": 28, "GC": 18},
-    "Racing Club": {"PJ": 20, "GF": 26, "GC": 20}, "Independiente": {"PJ": 20, "GF": 22, "GC": 24},
-    "San Lorenzo": {"PJ": 20, "GF": 20, "GC": 25}, "Estudiantes": {"PJ": 20, "GF": 21, "GC": 19},
-    "Vélez Sársfield": {"PJ": 20, "GF": 24, "GC": 22}, "Talleres": {"PJ": 20, "GF": 23, "GC": 21},
-    "Huracán": {"PJ": 20, "GF": 18, "GC": 23}, "Lanús": {"PJ": 20, "GF": 17, "GC": 22},
-    "Argentinos Juniors": {"PJ": 20, "GF": 19, "GC": 20}, "Defensa y Justicia": {"PJ": 20, "GF": 16, "GC": 21},
-    "Rosario Central": {"PJ": 20, "GF": 20, "GC": 22}, "Newell's Old Boys": {"PJ": 20, "GF": 18, "GC": 23},
-    "Godoy Cruz": {"PJ": 20, "GF": 17, "GC": 24}, "Platense": {"PJ": 20, "GF": 14, "GC": 26},
-    "Belgrano": {"PJ": 20, "GF": 18, "GC": 20}, "Instituto": {"PJ": 20, "GF": 19, "GC": 21},
-    "Banfield": {"PJ": 20, "GF": 15, "GC": 22}, "Barracas Central": {"PJ": 20, "GF": 14, "GC": 25},
-    "Tigre": {"PJ": 20, "GF": 12, "GC": 28}, "Sarmiento": {"PJ": 20, "GF": 15, "GC": 24}
+    "River Plate": {"PJ": 20, "GF": 32, "GC": 14}, 
+    "Boca Juniors": {"PJ": 20, "GF": 28, "GC": 18},
+    "Racing Club": {"PJ": 20, "GF": 26, "GC": 20}, 
+    "Independiente": {"PJ": 20, "GF": 22, "GC": 24},
+    "San Lorenzo": {"PJ": 20, "GF": 20, "GC": 25}, 
+    "Estudiantes (LP)": {"PJ": 20, "GF": 21, "GC": 19},
+    "Vélez Sársfield": {"PJ": 20, "GF": 24, "GC": 22}, 
+    "Talleres (C)": {"PJ": 20, "GF": 23, "GC": 21},
+    "Huracán": {"PJ": 20, "GF": 18, "GC": 23}, 
+    "Lanús": {"PJ": 20, "GF": 17, "GC": 22},
+    "Argentinos Juniors": {"PJ": 20, "GF": 19, "GC": 20}, 
+    "Defensa y Justicia": {"PJ": 20, "GF": 16, "GC": 21},
+    "Rosario Central": {"PJ": 20, "GF": 20, "GC": 22}, 
+    "Newell's Old Boys": {"PJ": 20, "GF": 18, "GC": 23},
+    "Godoy Cruz": {"PJ": 20, "GF": 17, "GC": 24}, 
+    "Platense": {"PJ": 20, "GF": 14, "GC": 26},
+    "Belgrano": {"PJ": 20, "GF": 18, "GC": 20}, 
+    "Instituto": {"PJ": 20, "GF": 19, "GC": 21},
+    "Banfield": {"PJ": 20, "GF": 15, "GC": 22}, 
+    "Barracas Central": {"PJ": 20, "GF": 14, "GC": 25},
+    "Tigre": {"PJ": 20, "GF": 12, "GC": 28}, 
+    "Sarmiento": {"PJ": 20, "GF": 15, "GC": 24},
+    "Atlético Tucumán": {"PJ": 20, "GF": 18, "GC": 22},
+    "Central Córdoba": {"PJ": 20, "GF": 14, "GC": 26},
+    "Unión": {"PJ": 20, "GF": 17, "GC": 20},
+    "Gimnasia (LP)": {"PJ": 20, "GF": 18, "GC": 23},
+    "Independiente Rivadavia": {"PJ": 20, "GF": 13, "GC": 25},
+    "Deportivo Riestra": {"PJ": 20, "GF": 11, "GC": 26}
 }
 
-@st.cache_data(ttl=86400) # Se actualiza una vez al día para evitar bloqueos
+@st.cache_data(ttl=86400)
 def obtener_estadisticas_liga() -> tuple[pd.DataFrame, bool]:
-    """Descarga la tabla de la liga desde internet para conocer la fuerza real de los rivales."""
     URLS_CANDIDATAS = [
         "https://fbref.com/es/comps/21/Liga-Argentina-Stats",
         "https://fbref.com/en/comps/21/Argentine-Primera-Division-Stats",
@@ -80,7 +96,7 @@ def obtener_estadisticas_liga() -> tuple[pd.DataFrame, bool]:
         except Exception:
             continue
 
-    # Si no hay internet o falla la página, usa los promedios guardados
+    # Si no hay internet o falla la página, usa los promedios guardados (28 equipos)
     registros = [{"equipo": eq, "PJ": v["PJ"], "GF": v["GF"], "GC": v["GC"]} for eq, v in FALLBACK_LIGA.items()]
     return pd.DataFrame(registros), False
 
@@ -90,7 +106,6 @@ def obtener_estadisticas_liga() -> tuple[pd.DataFrame, bool]:
 
 @st.cache_data(ttl=86400)
 def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
-    """Lee tu Excel SOLO para armar el perfil de rendimiento de los jugadores de River."""
     ruta = Path(ruta_excel_str)
     if not ruta.exists(): return pd.DataFrame()
     try: xl = pd.ExcelFile(ruta)
