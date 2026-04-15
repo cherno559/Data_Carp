@@ -232,7 +232,43 @@ def fig_distribucion(sim, rival, style_fn=None):
 # ─────────────────────────────────────────────────────────────────────────────
 # MÓDULO 4 ── INTERFAZ STREAMLIT ORIGINAL
 # ─────────────────────────────────────────────────────────────────────────────
+def generar_cronica_partido(sim, titulares, df_plantilla, rival):
+    """Genera una narrativa del resultado más probable basándose en el xG de tus titulares."""
+    # 1. Buscamos el resultado exacto con más % de probabilidad
+    top_resultado = sim["df_resultados"].sort_values("prob", ascending=False).iloc[0]
+    goles_r = int(top_resultado["River"])
+    goles_v = int(top_resultado["Rival"])
+    
+    cronica = []
+    
+    # 2. Generar Goles de River (Basado en la probabilidad individual de los titulares)
+    if goles_r > 0:
+        df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
+        
+        # Le damos un "peso" a cada jugador. Sumamos 0.05 para que los defensores 
+        # también tengan una chance mínima de hacer gol de cabeza en un córner.
+        df_xi["peso_gol"] = df_xi["xG_p90"] + 0.05 
+        pesos = df_xi["peso_gol"] / df_xi["peso_gol"].sum() # Normalizamos a 100%
+        
+        # Sorteamos los goleadores según su peso matemático
+        goleadores = np.random.choice(df_xi["Jugador"], size=goles_r, p=pesos, replace=True)
+        # Sorteamos los minutos en los que ocurren los goles
+        minutos_r = sorted(np.random.randint(2, 90, size=goles_r))
+        
+        for m, g in zip(minutos_r, goleadores):
+            cronica.append({"Minuto": m, "Equipo": "River Plate", "Icono": "🔴", "Evento": f"¡GOL de River! Define {g}."})
 
+    # 3. Generar Goles del Rival
+    if goles_v > 0:
+        minutos_v = sorted(np.random.randint(2, 90, size=goles_v))
+        for m in minutos_v:
+            # Como no tenemos el XI rival, lo hacemos genérico
+            cronica.append({"Minuto": m, "Equipo": rival, "Icono": "⚽", "Evento": f"Gol de {rival}."})
+            
+    # 4. Ordenar cronológicamente
+    cronica = sorted(cronica, key=lambda x: x["Minuto"])
+    
+    return goles_r, goles_v, cronica
 def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
     # RECUPERAMOS EL CSS EXACTO DE TU DISEÑO
     st.markdown("""
