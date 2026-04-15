@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TABLA DE POSICIONES 2026 (J 13)
+# CONSTANTES Y TABLA DE POSICIONES 2026 (J 13)
 # ─────────────────────────────────────────────────────────────────────────────
 
 MONTECARLO_N = 10_000
@@ -20,28 +20,43 @@ EQUIPOS_PRIMERA_2026 = [
 ]
 
 DATOS_LIGA_MANUAL = {
-    "Ind. Rivadavia":  {"PJ": 13, "GF": 23, "GC": 13}, "River": {"PJ": 13, "GF": 19, "GC": 9},
-    "Vélez": {"PJ": 13, "GF": 15, "GC": 9}, "Estudiantes": {"PJ": 13, "GF": 16, "GC": 7},
-    "Argentinos": {"PJ": 13, "GF": 14, "GC": 10}, "Lanús": {"PJ": 13, "GF": 18, "GC": 14},
-    "Belgrano": {"PJ": 13, "GF": 13, "GC": 12}, "Boca Jrs.": {"PJ": 13, "GF": 15, "GC": 8},
-    "Central": {"PJ": 13, "GF": 15, "GC": 13}, "Talleres": {"PJ": 13, "GF": 14, "GC": 12},
-    "Huracán": {"PJ": 13, "GF": 15, "GC": 10}, "Unión": {"PJ": 13, "GF": 19, "GC": 14},
-    "Defensa": {"PJ": 13, "GF": 16, "GC": 12}, "Barracas": {"PJ": 13, "GF": 13, "GC": 12},
-    "Tigre": {"PJ": 13, "GF": 16, "GC": 12}, "Independiente": {"PJ": 13, "GF": 19, "GC": 16},
-    "Racing": {"PJ": 13, "GF": 15, "GC": 13}, "San Lorenzo": {"PJ": 13, "GF": 12, "GC": 12},
-    "Instituto": {"PJ": 13, "GF": 14, "GC": 15}, "Gimnasia": {"PJ": 13, "GF": 15, "GC": 19},
-    "Platense": {"PJ": 13, "GF": 7,  "GC": 8}, "Sarmiento": {"PJ": 13, "GF": 11, "GC": 14},
-    "Banfield": {"PJ": 13, "GF": 14, "GC": 17}, "Gimnasia (M)": {"PJ": 13, "GF": 10, "GC": 16},
-    "Central Córdoba": {"PJ": 13, "GF": 6,  "GC": 16}, "Atl. Tucumán": {"PJ": 13, "GF": 13, "GC": 18},
-    "Newell's": {"PJ": 13, "GF": 10, "GC": 23}, "Riestra": {"PJ": 13, "GF": 3,  "GC": 10},
-    "Aldosivi": {"PJ": 13, "GF": 3,  "GC": 14}, "Estudiantes RC": {"PJ": 13, "GF": 4,  "GC": 19}
+    "Ind. Rivadavia":  {"PJ": 13, "GF": 23, "GC": 13},
+    "River":           {"PJ": 13, "GF": 19, "GC": 9},
+    "Vélez":           {"PJ": 13, "GF": 15, "GC": 9},
+    "Estudiantes":     {"PJ": 13, "GF": 16, "GC": 7},
+    "Argentinos":      {"PJ": 13, "GF": 14, "GC": 10},
+    "Lanús":           {"PJ": 13, "GF": 18, "GC": 14},
+    "Belgrano":        {"PJ": 13, "GF": 13, "GC": 12},
+    "Boca Jrs.":       {"PJ": 13, "GF": 15, "GC": 8},
+    "Central":         {"PJ": 13, "GF": 15, "GC": 13},
+    "Talleres":        {"PJ": 13, "GF": 14, "GC": 12},
+    "Huracán":         {"PJ": 13, "GF": 15, "GC": 10},
+    "Unión":           {"PJ": 13, "GF": 19, "GC": 14},
+    "Defensa":         {"PJ": 13, "GF": 16, "GC": 12},
+    "Barracas":        {"PJ": 13, "GF": 13, "GC": 12},
+    "Tigre":           {"PJ": 13, "GF": 16, "GC": 12},
+    "Independiente":   {"PJ": 13, "GF": 19, "GC": 16},
+    "Racing":          {"PJ": 13, "GF": 15, "GC": 13},
+    "San Lorenzo":     {"PJ": 13, "GF": 12, "GC": 12},
+    "Instituto":       {"PJ": 13, "GF": 14, "GC": 15},
+    "Gimnasia":        {"PJ": 13, "GF": 15, "GC": 19},
+    "Platense":        {"PJ": 13, "GF": 7,  "GC": 8},
+    "Sarmiento":       {"PJ": 13, "GF": 11, "GC": 14},
+    "Banfield":        {"PJ": 13, "GF": 14, "GC": 17},
+    "Gimnasia (M)":    {"PJ": 13, "GF": 10, "GC": 16},
+    "Central Córdoba": {"PJ": 13, "GF": 6,  "GC": 16},
+    "Atl. Tucumán":    {"PJ": 13, "GF": 13, "GC": 18},
+    "Newell's":        {"PJ": 13, "GF": 10, "GC": 23},
+    "Riestra":         {"PJ": 13, "GF": 3,  "GC": 10},
+    "Aldosivi":        {"PJ": 13, "GF": 3,  "GC": 14},
+    "Estudiantes RC":  {"PJ": 13, "GF": 4,  "GC": 19}
 }
 
 RED, GRAY, LIGHT_B = "#D0021B", "#374151", "rgba(249,250,251,1)"
 _ST = dict(font=dict(family="Rajdhani", size=13), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 1 ── DATA LIGA Y PLANTILLA
+# MÓDULO 1 ── DATA
 # ─────────────────────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=86400)
@@ -76,7 +91,7 @@ def extraer_plantilla_river(ruta_excel_str):
     return agg[agg["Minutos"] >= 1].reset_index(drop=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 2 ── LÓGICA DE SIMULACIÓN Y GOLEADORES (CON SMOOTHING)
+# MÓDULO 2 ── LÓGICA DE SIMULACIÓN Y GOLEADORES
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
@@ -85,12 +100,9 @@ def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
     riv_base = df_liga[df_liga["equipo"] == "River"].iloc[0]
     fa_rival, fd_rival = (r_data["GF"]/r_data["PJ"])/mgf, (r_data["GC"]/r_data["PJ"])/mgf
     fa_river, fd_river = (riv_base["GF"]/riv_base["PJ"])/mgf, (riv_base["GC"]/riv_base["PJ"])/mgf
-    
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)]
-    # Aumentamos un poco la sensibilidad del XI (de 0.4 a 0.5)
     mult_atk = 1.0 + ((df_xi["xG_p90"].mean() / df_plantilla["xG_p90"].mean() - 1.0) * 0.5)
     forma = 1.0 + ((df_xi["forma"].mean() - 1.0) * 0.5)
-    
     V = 1.15
     lam_r = fa_river * mult_atk * fd_rival * mgf * forma * (V if es_local else 1.0)
     lam_v = fa_rival * fd_river * mgf * (1/forma) * (1.0 if es_local else V)
@@ -99,7 +111,6 @@ def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
 def simular_montecarlo(lam_r, lam_v):
     rng = np.random.default_rng(42)
     gr, gv = rng.poisson(lam_r, MONTECARLO_N), rng.poisson(lam_v, MONTECARLO_N)
-    # Ajuste Dixon-Coles suavizado (0.18 en vez de 0.28) para que la victoria pese más
     for i in range(MONTECARLO_N):
         if ((gr[i]==1 and gv[i]==0) or (gr[i]==0 and gv[i]==1)) and rng.random() < 0.18:
             gr[i], gv[i] = 1, 1
@@ -111,29 +122,21 @@ def simular_montecarlo(lam_r, lam_v):
 
 def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
-    
-    # LAPLACE SMOOTHING: Les damos una chance mínima a todos para que nadie tenga 0.0%
     def amenaza_base(pos):
         if "Delantero" in pos: return 0.05
         if "Mediocampista" in pos: return 0.03
-        return 0.015 # Defensores (mínima chance de córner/rebote)
-    
-    # Peso de posición para priorizar visualmente a los atacantes
+        return 0.015 
     def peso_pos(p):
         if "Delantero" in p: return 1.3
         if "Mediocampista" in p: return 1.0
         return 0.7 
-    
     df_xi["amenaza"] = (df_xi["xG_p90"] + df_xi["Posicion"].apply(amenaza_base)) * df_xi["Posicion"].apply(peso_pos)
     total = df_xi["amenaza"].sum() if df_xi["amenaza"].sum() > 0 else 1
-    
-    # Probabilidad de que el jugador marque al menos un gol
     df_xi["% Prob. Gol"] = ((df_xi["amenaza"] / total) * (1 - np.exp(-lam_r)) * 100).round(1)
-    
     return df_xi[["Jugador", "Posicion", "xG_p90", "% Prob. Gol"]].sort_values("% Prob. Gol", ascending=False)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 3 ── VISUALIZACIONES
+# MÓDULO 3 ── VISUALIZACIONES (CON EJES ACTUALIZADOS)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def fig_heatmap(sim, rival, style_fn):
@@ -147,8 +150,33 @@ def fig_heatmap(sim, rival, style_fn):
             p = row["prob"] * 100
             z[v][r] = p
             texto[v][r] = f"{p:.1f}%" if p > 0.5 else ""
-    fig = go.Figure(go.Heatmap(z=z, x=[str(i) for i in range(MAX_G + 1)], y=[str(i) for i in range(MAX_G + 1)], text=texto, texttemplate="%{text}", colorscale=[[0, "#F9FAFB"], [0.2, "#FEE2E2"], [1, RED]], showscale=False))
-    fig.update_layout(**_ST, title=f"MAPA DE MARCADORES (vs {rival})", xaxis=dict(title="Goles River", tickfont=dict(color=RED)), yaxis=dict(title=f"Goles {rival}"), height=450)
+            
+    fig = go.Figure(go.Heatmap(
+        z=z, 
+        x=[str(i) for i in range(MAX_G + 1)], 
+        y=[str(i) for i in range(MAX_G + 1)], 
+        text=texto, 
+        texttemplate="%{text}", 
+        colorscale=[[0, "#F9FAFB"], [0.2, "#FEE2E2"], [1, RED]], 
+        showscale=False
+    ))
+    
+    fig.update_layout(
+        **_ST, 
+        title=f"MAPA DE MARCADORES (Goles River vs {rival})",
+        xaxis=dict(
+            title="<b>GOLES RIVER PLATE</b>", 
+            titlefont=dict(size=14, family="Rajdhani", color=RED),
+            tickfont=dict(size=12, color="#374151"),
+            side="bottom"
+        ),
+        yaxis=dict(
+            title=f"<b>GOLES {rival.upper()}</b>", 
+            titlefont=dict(size=14, family="Rajdhani", color="#374151"),
+            tickfont=dict(size=12, color="#374151")
+        ),
+        height=500
+    )
     if style_fn: style_fn(fig)
     return fig
 
