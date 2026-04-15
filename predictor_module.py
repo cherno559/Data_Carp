@@ -6,12 +6,11 @@ import re
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
-# CONSTANTES Y TABLA POSICIONES 2026 (CORREGIDA SEGÚN IMAGEN)
+# CONSTANTES Y TABLA DE POSICIONES 2026 (SEGÚN TUS IMÁGENES)
 # ─────────────────────────────────────────────────────────────────────────────
 
 MONTECARLO_N = 10_000
 
-# Nombres exactos de tu torneo
 EQUIPOS_PRIMERA_2026 = [
     "Ind. Rivadavia", "River", "Vélez", "Estudiantes", "Argentinos", "Lanús", 
     "Belgrano", "Boca Jrs.", "Central", "Talleres", "Huracán", "Unión", 
@@ -20,6 +19,7 @@ EQUIPOS_PRIMERA_2026 = [
     "Central Córdoba", "Atl. Tucumán", "Newell's", "Riestra", "Aldosivi", "Estudiantes RC"
 ]
 
+# Datos exactos: J 13 | GF:GC
 DATOS_LIGA_MANUAL = {
     "Ind. Rivadavia":  {"PJ": 13, "GF": 23, "GC": 13},
     "River":           {"PJ": 13, "GF": 19, "GC": 9},
@@ -54,20 +54,19 @@ DATOS_LIGA_MANUAL = {
 }
 
 RED, GRAY, LIGHT_B = "#D0021B", "#374151", "rgba(249,250,251,1)"
+_ST = dict(font=dict(family="Rajdhani", size=13), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MÓDULO 1 ── DATA LIGA Y PLANTILLA
 # ─────────────────────────────────────────────────────────────────────────────
 
 @st.cache_data(ttl=86400)
-def obtener_estadisticas_liga() -> pd.DataFrame:
-    registros = []
-    for eq, stats in DATOS_LIGA_MANUAL.items():
-        registros.append({"equipo": eq, "PJ": stats["PJ"], "GF": stats["GF"], "GC": stats["GC"]})
+def obtener_estadisticas_liga():
+    registros = [{"equipo": eq, "PJ": s["PJ"], "GF": s["GF"], "GC": s["GC"]} for eq, s in DATOS_LIGA_MANUAL.items()]
     return pd.DataFrame(registros)
 
 @st.cache_data(ttl=3600)
-def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
+def extraer_plantilla_river(ruta_excel_str):
     ruta = Path(ruta_excel_str)
     xl = pd.ExcelFile(ruta)
     hojas_omitir = {"Promedios Generales", "Goleadores", "Asistidores", "Resumen Estadísticas"}
@@ -82,11 +81,9 @@ def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
             df_h = df_h[(df_h["Jugador"] != "") & (df_h["Minutos"] > 0)].copy()
             filas.append(df_h)
         except: continue
-    
     df_todos = pd.concat(filas, ignore_index=True)
     for c in ["Goles", "Intercepciones", "Nota SofaScore"]:
         df_todos[c] = pd.to_numeric(df_todos.get(c, 0), errors="coerce").fillna(0)
-
     agg = df_todos.groupby("Jugador", as_index=False).agg(
         Posicion = ("Posición", lambda x: x.mode()[0] if not x.mode().empty else "Mediocampista"),
         Minutos  = ("Minutos", "sum"),
@@ -94,32 +91,26 @@ def extraer_plantilla_river(ruta_excel_str: str) -> pd.DataFrame:
         Goles    = ("Goles", "sum"),
         Inter    = ("Intercepciones", "sum")
     )
-    m90 = agg["Minutos"] / 90
-    agg["xG_p90"]  = (agg["Goles"] / m90).round(3)
-    agg["xGA_p90"] = (agg["Inter"] / m90).round(3)
-    agg["forma"]   = (agg["Nota"] / 7.0).clip(0.85, 1.15) 
+    agg["xG_p90"] = (agg["Goles"] / (agg["Minutos"]/90)).round(3)
+    agg["forma"] = (agg["Nota"] / 7.0).clip(0.85, 1.15)
     return agg[agg["Minutos"] >= 1].reset_index(drop=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 2 ── CÁLCULO Y GOLEADORES (FILTRO DE POSICIÓN)
+# MÓDULO 2 ── LÓGICA DE SIMULACIÓN Y GOLEADORES
 # ─────────────────────────────────────────────────────────────────────────────
 
 def calcular_lambdas(df_liga, rival, titulares, df_plantilla, es_local):
     mgf = (df_liga["GF"] / df_liga["PJ"]).mean()
     r_data = df_liga[df_liga["equipo"] == rival].iloc[0]
     riv_base = df_liga[df_liga["equipo"] == "River"].iloc[0]
-    
     fa_rival, fd_rival = (r_data["GF"]/r_data["PJ"])/mgf, (r_data["GC"]/r_data["PJ"])/mgf
     fa_river, fd_river = (riv_base["GF"]/riv_base["PJ"])/mgf, (riv_base["GC"]/riv_base["PJ"])/mgf
-    
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)]
     mult_atk = 1.0 + ((df_xi["xG_p90"].mean() / df_plantilla["xG_p90"].mean() - 1.0) * 0.4)
-    mult_def = 1.0 + ((df_xi["xGA_p90"].mean() / df_plantilla["xGA_p90"].mean() - 1.0) * 0.4)
-    forma    = 1.0 + ((df_xi["forma"].mean() - 1.0) * 0.5)
-
+    forma = 1.0 + ((df_xi["forma"].mean() - 1.0) * 0.5)
     V = 1.15
     lam_r = fa_river * mult_atk * fd_rival * mgf * forma * (V if es_local else 1.0)
-    lam_v = fa_rival * (fd_river / max(mult_def, 0.3)) * mgf * (1/forma) * (1.0 if es_local else V)
+    lam_v = fa_rival * fd_river * mgf * (1/forma) * (1.0 if es_local else V)
     return round(float(np.clip(lam_r, 0.2, 5.0)), 3), round(float(np.clip(lam_v, 0.2, 5.0)), 3)
 
 def simular_montecarlo(lam_r, lam_v):
@@ -136,13 +127,10 @@ def simular_montecarlo(lam_r, lam_v):
 
 def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
     df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
-    
-    # AJUSTE POSICIÓN: Penalizamos a los defensores (aunque tengan xG por penales)
     def peso_pos(p):
         if "Delantero" in p: return 1.3
         if "Mediocampista" in p: return 1.0
-        return 0.6 # Defensores (Efecto Montiel corregido)
-    
+        return 0.65 # Ajuste Montiel (Defensores pesan menos)
     df_xi["p_pos"] = df_xi["Posicion"].apply(peso_pos)
     df_xi["p_final"] = df_xi["xG_p90"] * df_xi["p_pos"]
     total = df_xi["p_final"].sum() if df_xi["p_final"].sum() > 0 else 1
@@ -150,29 +138,47 @@ def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
     return df_xi[["Jugador", "Posicion", "xG_p90", "% Prob. Gol"]].sort_values("% Prob. Gol", ascending=False)
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 3 ── INTERFAZ STREAMLIT
+# MÓDULO 3 ── GRÁFICOS (HEATMAP CON NÚMEROS)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def fig_heatmap(sim, rival, style_fn):
+    MAX_G = 5
+    df = sim["df_resultados"]
+    z = np.zeros((MAX_G + 1, MAX_G + 1))
+    texto = [[""] * (MAX_G + 1) for _ in range(MAX_G + 1)]
+    for _, row in df.iterrows():
+        r, v = int(row["River"]), int(row["Rival"])
+        if r <= MAX_G and v <= MAX_G:
+            p = row["prob"] * 100
+            z[v][r] = p
+            texto[v][r] = f"{p:.1f}%" if p > 0.5 else ""
+    fig = go.Figure(go.Heatmap(z=z, x=[str(i) for i in range(MAX_G + 1)], y=[str(i) for i in range(MAX_G + 1)], text=texto, texttemplate="%{text}", colorscale=[[0, "#F9FAFB"], [0.2, "#FEE2E2"], [1, RED]], showscale=False))
+    fig.update_layout(**_ST, title=f"MAPA DE MARCADORES (vs {rival})", xaxis=dict(title="Goles River", tickfont=dict(color=RED)), yaxis=dict(title=f"Goles {rival}"), height=450)
+    if style_fn: style_fn(fig)
+    return fig
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MÓDULO 4 ── RENDER PRINCIPAL
 # ─────────────────────────────────────────────────────────────────────────────
 
 def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
     st.markdown("""<style>
-    .pred-kpi { background: #111827; border: 1px solid #2A2A2A; border-left: 4px solid #D0021B; border-radius: 10px; padding: 16px 20px; text-align: center; }
+    .pred-kpi { background: #111827; border-left: 4px solid #D0021B; border-radius: 10px; padding: 16px 20px; text-align: center; }
     .pred-kpi .label { font-family: 'Rajdhani', sans-serif; font-size: 10px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
-    .pred-kpi .valor { font-family: 'Bebas Neue', cursive; font-size: 44px; line-height: 1; color: #D0021B; }
+    .pred-kpi .valor { font-family: 'Bebas Neue', cursive; font-size: 44px; color: #D0021B; line-height: 1; }
     .pred-kpi.empate .valor { color: #9CA3AF; } .pred-kpi.derrota .valor { color: #1A4A8B; }
     .badge-datos { display: inline-block; padding: 3px 12px; border-radius: 20px; font-family: 'Rajdhani'; font-size: 12px; font-weight: 700; background: #1a4d1a; color: #66ff66; margin-bottom: 15px; }
     </style>""", unsafe_allow_html=True)
 
     df_liga = obtener_estadisticas_liga()
     df_plantilla = extraer_plantilla_river(str(ruta_excel))
-    
-    st.markdown(f'<span class="badge-datos">✅ Torneo 2026: Tabla Sincronizada (J 13)</span>', unsafe_allow_html=True)
+    st.markdown('<span class="badge-datos">✅ Torneo 2026 Sincronizado (J 13)</span>', unsafe_allow_html=True)
 
     c1, c2 = st.columns([2,1])
     rival_sel = c1.selectbox("🆚 Seleccioná el Rival", sorted([e for e in EQUIPOS_PRIMERA_2026 if e != "River"]))
     es_local = c2.radio("📍 Condición", ["Monumental 🏟️", "Visitante ✈️"], horizontal=True) == "Monumental 🏟️"
 
-    df_p = df_plantilla.sort_values("Minutos", ascending=False)
-    opciones = [f"{r.Jugador} ({r.Posicion})" for _, r in df_p.iterrows()]
+    opciones = [f"{r.Jugador} ({r.Posicion})" for _, r in df_plantilla.sort_values("Minutos", ascending=False).iterrows()]
     titulares_raw = st.multiselect("👥 Armá tu XI Titular:", opciones, default=opciones[:11], max_selections=11)
     titulares = [re.sub(r"\s*\(.*\)$", "", t).strip() for t in titulares_raw]
 
@@ -185,27 +191,19 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
         for c, l, v, t in [(k1,"Victoria",f"{sim['prob_victoria']*100:.1f}%",""), (k2,"Empate",f"{sim['prob_empate']*100:.1f}%","empate"), (k3,"Derrota",f"{sim['prob_derrota']*100:.1f}%","derrota"), (k4,"λ River",f"{lr:.2f}",""), (k5,"λ Rival",f"{lv:.2f}","")]:
             c.markdown(f'<div class="pred-kpi {t}"><div class="label">{l}</div><div class="valor">{v}</div></div>', unsafe_allow_html=True)
 
-        t1, t2, t3, t4 = st.tabs(["📊 Probabilidades", "⚽ Posibles Goleadores", "🎯 Marcadores", "🔬 Análisis XI"])
-        
+        t1, t2, t3, t4 = st.tabs(["📊 Probabilidades", "⚽ Goleadores", "🎯 Marcadores", "🔬 Análisis XI"])
         with t1:
             fig = go.Figure(go.Bar(x=[sim["prob_victoria"]*100, sim["prob_empate"]*100, sim["prob_derrota"]*100], y=["Victoria River", "Empate", "Derrota River"], orientation="h", marker_color=[RED, "#9CA3AF", "#1A4A8B"], text=[f"{v*100:.1f}%" for v in [sim["prob_victoria"], sim["prob_empate"], sim["prob_derrota"]]], textposition="outside"))
-            fig.update_layout(height=260, showlegend=False, font=dict(family="Rajdhani"), paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
+            fig.update_layout(**_ST, height=260, showlegend=False)
             if apply_plotly_style_fn: apply_plotly_style_fn(fig)
             st.plotly_chart(fig, use_container_width=True)
-            
         with t2:
-            st.markdown("<div style='font-family:Bebas Neue;font-size:22px;color:#1F2937;margin-bottom:12px;'>🏆 PROBABILIDAD DE GOL POR JUGADOR</div>", unsafe_allow_html=True)
-            df_g = obtener_tabla_goleadores(titulares, df_plantilla, lr)
-            st.dataframe(df_g.rename(columns={"xG_p90": "xG/90"}), use_container_width=True, hide_index=True)
-
+            st.dataframe(obtener_tabla_goleadores(titulares, df_plantilla, lr).rename(columns={"xG_p90": "xG/90"}), use_container_width=True, hide_index=True)
         with t3:
-            z = np.zeros((7,7))
-            for _, r in sim["df_resultados"].iterrows(): 
-                if r.River < 7 and r.Rival < 7: z[int(r.Rival)][int(r.River)] = r.prob * 100
-            fig_h = go.Figure(go.Heatmap(z=z, x=[str(i) for i in range(7)], y=[str(i) for i in range(7)], colorscale="Reds"))
-            fig_h.update_layout(title="Mapa de Marcadores", xaxis_title="River", yaxis_title=rival_sel, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=LIGHT_B)
-            if apply_plotly_style_fn: apply_plotly_style_fn(fig_h)
-            st.plotly_chart(fig_h, use_container_width=True)
-            
+            st.plotly_chart(fig_heatmap(sim, rival_sel, apply_plotly_style_fn), use_container_width=True)
+            top3 = sim["df_resultados"].sort_values("prob", ascending=False).head(3)
+            cols = st.columns(3)
+            for i, (_, r) in enumerate(top3.iterrows()):
+                cols[i].markdown(f"<div style='background:#F9FAFB; padding:10px; border-radius:8px; text-align:center;'><div style='font-family:Bebas Neue; font-size:24px;'>{int(r.River)} - {int(r.Rival)}</div><div style='font-family:Rajdhani; font-size:12px;'>{r.prob*100:.1f}% CHANCE</div></div>", unsafe_allow_html=True)
         with t4:
-            st.dataframe(df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador","Posicion","Nota","xG_p90","xGA_p90"]].sort_values("Posicion"), use_container_width=True, hide_index=True)
+            st.dataframe(df_plantilla[df_plantilla["Jugador"].isin(titulares)][["Jugador","Posicion","Nota","xG_p90"]].sort_values("Posicion"), use_container_width=True, hide_index=True)
