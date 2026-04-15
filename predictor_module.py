@@ -27,7 +27,7 @@ LIGHT_B = "rgba(249,250,251,1)"
 # MÓDULO 1 ── DATA MACRO: EXTRACCIÓN DESDE INTERNET (WEB SCRAPING)
 # ─────────────────────────────────────────────────────────────────────────────
 
-# PROMEDIOS HISTÓRICOS (FALLBACK) - LOS 28 EQUIPOS DE PRIMERA DIVISIÓN
+# PROMEDIOS HISTÓRICOS (FALLBACK) - LOS 30 EQUIPOS DE PRIMERA DIVISIÓN
 FALLBACK_LIGA = {
     "River Plate": {"PJ": 20, "GF": 32, "GC": 14}, 
     "Boca Juniors": {"PJ": 20, "GF": 28, "GC": 18},
@@ -56,7 +56,9 @@ FALLBACK_LIGA = {
     "Unión": {"PJ": 20, "GF": 17, "GC": 20},
     "Gimnasia (LP)": {"PJ": 20, "GF": 18, "GC": 23},
     "Independiente Rivadavia": {"PJ": 20, "GF": 13, "GC": 25},
-    "Deportivo Riestra": {"PJ": 20, "GF": 11, "GC": 26}
+    "Deportivo Riestra": {"PJ": 20, "GF": 11, "GC": 26},
+    "San Martín (T)": {"PJ": 20, "GF": 15, "GC": 22},
+    "Aldosivi": {"PJ": 20, "GF": 14, "GC": 24}
 }
 
 @st.cache_data(ttl=86400)
@@ -96,7 +98,7 @@ def obtener_estadisticas_liga() -> tuple[pd.DataFrame, bool]:
         except Exception:
             continue
 
-    # Si no hay internet o falla la página, usa los promedios guardados (28 equipos)
+    # Si no hay internet o falla la página, usa los promedios guardados
     registros = [{"equipo": eq, "PJ": v["PJ"], "GF": v["GF"], "GC": v["GC"]} for eq, v in FALLBACK_LIGA.items()]
     return pd.DataFrame(registros), False
 
@@ -216,12 +218,20 @@ def calcular_multiplicador(titulares: list[str], df_plantilla: pd.DataFrame) -> 
     return {"mult_atk": float(np.clip(mult_atk * forma_prom, 0.55, 1.65)), "mult_def": float(np.clip(mult_def * forma_prom, 0.55, 1.65)), "forma_prom": forma_prom}
 
 def calcular_lambdas(fuerzas: dict, mults: dict, medias: dict, es_local: bool) -> tuple[float, float]:
-    FACTOR_LOCAL = 1.08 if es_local else 1.00
+    # En el fútbol sudamericano, la localía pesa mucho. Le damos un 15% de ventaja al que sea local.
+    VENTAJA_LOCAL = 1.15 
+    
+    # Asignamos la ventaja a quien corresponda
+    factor_river = VENTAJA_LOCAL if es_local else 1.00
+    factor_rival = 1.00 if es_local else VENTAJA_LOCAL
+
+    # Fuerzas de River ajustadas por tus 11 titulares
     fa_river_adj = fuerzas["fa_river"] * mults["mult_atk"]
     fd_river_adj = fuerzas["fd_river"] * (1 / max(mults["mult_def"], 0.1))
 
-    lambda_r = fa_river_adj * (1 / max(fuerzas["fd_rival"], 0.4)) * medias["mgf"] * FACTOR_LOCAL
-    lambda_v = fuerzas["fa_rival"] * (1 / max(fd_river_adj, 0.4)) * medias["mgf"]
+    # Cálculo final de Goles Esperados (Lambda)
+    lambda_r = fa_river_adj * (1 / max(fuerzas["fd_rival"], 0.4)) * medias["mgf"] * factor_river
+    lambda_v = fuerzas["fa_rival"] * (1 / max(fd_river_adj, 0.4)) * medias["mgf"] * factor_rival
 
     return round(float(np.clip(lambda_r, 0.2, 6.0)), 4), round(float(np.clip(lambda_v, 0.2, 6.0)), 4)
 
@@ -283,15 +293,6 @@ def fig_distribucion(sim: dict, rival: str) -> go.Figure:
     for lam, nombre, color in [(sim["lambda_r"], "River", RED), (sim["lambda_v"], rival, GRAY)]:
         fig.add_vline(x=lam, line_dash="dot", line_color=color, line_width=2, annotation_text=f"λ {nombre} = {lam:.2f}", annotation_font=dict(color=color))
     fig.update_layout(**_PLOTLY_BASE, title=f"DISTRIBUCIÓN DE GOLES SIMULADOS (N={sim['n']:,})", barmode="group", xaxis=dict(title="Goles por partido", dtick=1), yaxis=dict(title="Frecuencia (%)", ticksuffix="%"), legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1), height=360)
-    return fig
-
-def fig_radar_xi(df_xi: pd.DataFrame) -> go.Figure:
-    if df_xi.empty: return go.Figure()
-    metricas = ["xG_p90", "xGA_p90", "forma", "Goles", "Asistencias"]
-    labels   = ["xG/90", "Interc./90", "Forma", "Goles", "Asistencias"]
-    vals_xi = [float(df_xi[m].mean()) if m in df_xi.columns else 0.0 for m in metricas]
-    fig = go.Figure(go.Scatterpolar(r=vals_xi + [vals_xi[0]], theta=labels + [labels[0]], fill="toself", fillcolor=f"rgba(208,2,27,0.15)", line=dict(color=RED, width=2), marker=dict(color=RED, size=7), hovertemplate="%{theta}: %{r:.3f}<extra></extra>"))
-    fig.update_layout(polar=dict(bgcolor=LIGHT_B, radialaxis=dict(visible=True, showticklabels=True), angularaxis=dict(tickfont=dict(color=GRAY))), showlegend=False, paper_bgcolor="rgba(0,0,0,0)", margin=dict(l=50, r=50, t=30, b=30), height=300)
     return fig
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -392,11 +393,51 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
             st.dataframe(top[["Marcador", "Probabilidad"]].reset_index(drop=True), hide_index=True, use_container_width=True)
         with tab3: st.plotly_chart(fig_distribucion(sim, rival_sel), use_container_width=True)
         with tab4:
+            st.markdown(
+                "<div style='font-family:Bebas Neue,cursive;font-size:18px;"
+                "color:#1F2937;letter-spacing:2px;margin-bottom:8px;'>"
+                "📋 STATS DEL XI TITULAR</div>",
+                unsafe_allow_html=True,
+            )
             df_xi_display = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
-            c_radar, c_tabla = st.columns([1, 1.5])
-            with c_radar: st.plotly_chart(fig_radar_xi(df_xi_display), use_container_width=True)
-            with c_tabla:
-                cols_show = ["Jugador", "Posicion", "Nota", "xG_p90", "xGA_p90"]
-                st.dataframe(df_xi_display[cols_show].sort_values("Posicion").reset_index(drop=True), hide_index=True, use_container_width=True)
+            cols_show = ["Jugador", "Posicion", "Nota", "xG_p90", "xGA_p90"]
+            df_show = df_xi_display[cols_show].rename(columns={
+                "Posicion": "Pos.", "Nota": "⭐ Nota", "xG_p90": "xG/90", "xGA_p90": "xGA/90"
+            }).sort_values("Pos.").reset_index(drop=True)
+            st.dataframe(df_show, hide_index=True, use_container_width=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            st.markdown(
+                "<div style='font-family:Bebas Neue,cursive;font-size:18px;"
+                "color:#1F2937;letter-spacing:2px;margin-bottom:8px;'>"
+                "⚙️ FUERZAS CALCULADAS</div>",
+                unsafe_allow_html=True,
+            )
+            df_fuerzas = pd.DataFrame({
+                "Parámetro": [
+                    "FA River (base)", "FA River (ajustado por XI)",
+                    "FD River (base)", "FD River (ajustado por XI)",
+                    "FA Rival", "FD Rival",
+                    "Mult. Ataque XI", "Mult. Defensa XI", "Forma Promedio XI",
+                    "Media GF/partido (liga interna)",
+                    "λ River", f"λ {rival_sel}",
+                ],
+                "Valor": [
+                    f"{fuerzas['fa_river']:.4f}",
+                    f"{fuerzas['fa_river']*mults['mult_atk']:.4f}",
+                    f"{fuerzas['fd_river']:.4f}",
+                    f"{fuerzas['fd_river']*(1/max(mults['mult_def'],0.1)):.4f}",
+                    f"{fuerzas['fa_rival']:.4f}",
+                    f"{fuerzas['fd_rival']:.4f}",
+                    f"{mults['mult_atk']:.4f}",
+                    f"{mults['mult_def']:.4f}",
+                    f"{mults['forma_prom']:.4f}",
+                    f"{medias['mgf']:.4f}",
+                    f"{λ_r:.4f}",
+                    f"{λ_v:.4f}",
+                ],
+            })
+            st.dataframe(df_fuerzas, hide_index=True, use_container_width=True)
 
         st.markdown(f"<div style='text-align:center;font-size:11px;color:#9CA3AF;margin-top:24px;'>Montecarlo N={MONTECARLO_N:,} · Red de Inteligencia de Scouting CARP</div>", unsafe_allow_html=True)
