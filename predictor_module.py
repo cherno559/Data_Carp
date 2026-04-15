@@ -238,18 +238,35 @@ def calcular_lambdas(fuerzas: dict, mults: dict, medias: dict, es_local: bool) -
 # ─────────────────────────────────────────────────────────────────────────────
 # MÓDULO 3 ── SIMULACIÓN MONTECARLO (vectorizada)
 # ─────────────────────────────────────────────────────────────────────────────
-
 def simular_montecarlo(lambda_r: float, lambda_v: float, n: int = MONTECARLO_N, seed: int = 42) -> dict:
     rng = np.random.default_rng(seed)
     goles_r = rng.poisson(lam=lambda_r, size=n)
     goles_v = rng.poisson(lam=lambda_v, size=n)
 
-    wins = int(np.sum(goles_r > goles_v)); draws = int(np.sum(goles_r == goles_v)); losses = int(np.sum(goles_r < goles_v))
+    # ── AJUSTE PARA EMPATES (Inspirado en Dixon-Coles) ──
+    # El fútbol tiene más empates 0-0 y 1-1 que los que predice la matemática pura.
+    # Convertimos un porcentaje de victorias ajustadas (1-0 o 0-1) en empates (1-1 o 0-0).
+    for i in range(n):
+        if goles_r[i] == 1 and goles_v[i] == 0 and rng.random() < 0.18:
+            goles_v[i] = 1  # 18% de los 1-0 terminan siendo 1-1
+        elif goles_r[i] == 0 and goles_v[i] == 1 and rng.random() < 0.18:
+            goles_r[i] = 1  # 18% de los 0-1 terminan siendo 1-1
+        elif goles_r[i] == 2 and goles_v[i] == 1 and rng.random() < 0.10:
+            goles_v[i] = 2  # 10% de los 2-1 terminan siendo 2-2
+
+    wins = int(np.sum(goles_r > goles_v))
+    draws = int(np.sum(goles_r == goles_v))
+    losses = int(np.sum(goles_r < goles_v))
 
     MAX_G = 6
     resultados = [{"River": r, "Rival": v, "prob": float(np.mean((goles_r == r) & (goles_v == v)))} for r in range(MAX_G + 1) for v in range(MAX_G + 1)]
 
-    return {"prob_victoria": wins/n, "prob_empate": draws/n, "prob_derrota": losses/n, "goles_river": goles_r, "goles_rival": goles_v, "df_resultados": pd.DataFrame(resultados), "lambda_r": lambda_r, "lambda_v": lambda_v, "n": n}
+    return {
+        "prob_victoria": wins/n, "prob_empate": draws/n, "prob_derrota": losses/n, 
+        "goles_river": goles_r, "goles_rival": goles_v, 
+        "df_resultados": pd.DataFrame(resultados), 
+        "lambda_r": lambda_r, "lambda_v": lambda_v, "n": n
+    }
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MÓDULO 4 ── GRÁFICOS PLOTLY
