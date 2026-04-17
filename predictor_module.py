@@ -263,7 +263,6 @@ def fig_heatmap(sim, rival, style_fn=None):
         showscale=False
     ))
 
-    # SOLUCIÓN: DICCIONARIO UNIFICADO PARA EVITAR ERROR DE PLOTLY
     layout_config = _ST.copy()
     layout_config.update({
         "title": {"text": f"MAPA DE MARCADORES — River vs {rival}"},
