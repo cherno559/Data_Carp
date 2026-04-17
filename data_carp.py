@@ -546,7 +546,15 @@ if menu == "Resumen General":
 
         if not df_promedios.empty:
             fig_prom = go.Figure()
-            colores_barras = [COLORES_POSICION.get(p, '#9CA3AF') for p in df_promedios['Posición']]
+        def obtener_color(pos):
+            p_str = str(pos).strip().upper()
+            if p_str.startswith('DEF'): return '#3B82F6' # Azul
+            if p_str.startswith('MED') or p_str.startswith('VOL'): return '#22C55E' # Verde
+            if p_str.startswith('DEL') or p_str.startswith('ATA'): return '#EF4444' # Rojo
+            if p_str.startswith('POR') or p_str.startswith('ARQ'): return '#F59E0B' # Naranja
+            return '#9CA3AF' # Gris si no encuentra coincidencia o no hay dato
+
+        colores_barras = [obtener_color(p) for p in df_promedios['Posición']]
             fig_prom.add_trace(go.Bar(
                 x=df_promedios['Promedio'],
                 y=df_promedios['Jugador'],
