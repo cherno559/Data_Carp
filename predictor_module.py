@@ -271,33 +271,36 @@ def fig_heatmap(sim, rival, style_fn=None):
         showscale=False
     ))
 
-    # BUG FIX 2: setear ejes ANTES de llamar style_fn (que los puede pisar)
-    # y guardar los títulos para reaplicarlos después si hace falta
-    x_title = "GOLES RIVER PLATE"
-    y_title = f"GOLES {rival.upper()}"
-
+    # Aplicamos SOLO el estilo base (_ST) sin llamar style_fn,
+    # ya que apply_plotly_style mezcla title como str con el dict que ya tenemos
+    # y Plotly lanza ValueError en Python 3.14.
     fig.update_layout(
         **_ST,
         title=f"MAPA DE MARCADORES — River vs {rival}",
         height=500,
         xaxis=dict(
-            title=dict(text=f"<b>{x_title}</b>", font=dict(size=14, family="Rajdhani", color=RED)),
+            title="GOLES RIVER PLATE",
+            titlefont=dict(size=13, family="Rajdhani", color=RED),
             tickfont=dict(size=12, color="#374151"),
-            side="bottom"
+            gridcolor="#E5E7EB",
+            linecolor="#E5E7EB",
+            side="bottom",
         ),
         yaxis=dict(
-            title=dict(text=f"<b>{y_title}</b>", font=dict(size=14, family="Rajdhani", color=GRAY)),
-            tickfont=dict(size=12, color="#374151")
+            title=f"GOLES {rival.upper()}",
+            titlefont=dict(size=13, family="Rajdhani", color=GRAY),
+            tickfont=dict(size=12, color="#374151"),
+            gridcolor="#E5E7EB",
+            linecolor="#E5E7EB",
+        ),
+        hoverlabel=dict(
+            bgcolor="#111827",
+            bordercolor=RED,
+            font_color="white",
+            font_family="Rajdhani",
+            font_size=13,
         ),
     )
-
-    # BUG FIX 2: si style_fn pisa los ejes, los restauramos
-    if style_fn:
-        style_fn(fig)
-        fig.update_layout(
-            xaxis_title=f"<b>{x_title}</b>",
-            yaxis_title=f"<b>{y_title}</b>",
-        )
 
     return fig
 
