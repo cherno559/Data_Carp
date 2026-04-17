@@ -140,27 +140,24 @@ PLOTLY_LAYOUT = dict(
 )
 
 def apply_plotly_style(fig, title="", xaxis_title="", yaxis_title=""):
-    fig.update_layout(
-        **PLOTLY_LAYOUT,
-        title=title,
-        xaxis=dict(
-            title=xaxis_title,
-            gridcolor="#E5E7EB",
-            linecolor="#E5E7EB",
-            zeroline=True,
-            zerolinecolor="#D1D5DB",
-            zerolinewidth=1,
-            title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
-        ),
-        yaxis=dict(
-            title=yaxis_title,
-            gridcolor="#E5E7EB",
-            linecolor="#E5E7EB",
-            zeroline=True,
-            zerolinecolor="#D1D5DB",
-            zerolinewidth=1,
-            title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
-        ),
+    fig.update_layout(**PLOTLY_LAYOUT, title=title)
+    fig.update_xaxes(
+        title_text=xaxis_title,
+        gridcolor="#E5E7EB",
+        linecolor="#E5E7EB",
+        zeroline=True,
+        zerolinecolor="#D1D5DB",
+        zerolinewidth=1,
+        title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
+    )
+    fig.update_yaxes(
+        title_text=yaxis_title,
+        gridcolor="#E5E7EB",
+        linecolor="#E5E7EB",
+        zeroline=True,
+        zerolinecolor="#D1D5DB",
+        zerolinewidth=1,
+        title_font=dict(family="Rajdhani", size=12, color="#6B7280"),
     )
     return fig
 
