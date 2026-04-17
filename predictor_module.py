@@ -251,7 +251,6 @@ def fig_heatmap(sim, rival, style_fn=None):
         if r <= MAX_G and v <= MAX_G:
             p = row["prob"] * 100
             z[v][r] = p
-            # MEJORA: Solo mostrar texto si la probabilidad es mayor a 1% para no ensuciar el mapa
             texto[v][r] = f"{p:.1f}%" if p > 1.0 else ""
 
     fig = go.Figure(go.Heatmap(
@@ -259,8 +258,8 @@ def fig_heatmap(sim, rival, style_fn=None):
         x=[str(i) for i in range(MAX_G + 1)],
         y=[str(i) for i in range(MAX_G + 1)],
         text=texto,
-        texttemplate="<b>%{text}</b>", # Texto en Negrita
-        colorscale=[[0, "rgba(0,0,0,0)"], [0.1, "#FEE2E2"], [1, RED]], # Más contraste
+        texttemplate="<b>%{text}</b>",
+        colorscale=[[0, "rgba(0,0,0,0)"], [0.1, "#FEE2E2"], [1, RED]],
         showscale=False
     ))
 
@@ -270,18 +269,22 @@ def fig_heatmap(sim, rival, style_fn=None):
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         height=450,
-        margin=dict(t=20, b=20, l=20, r=20),
+        # SOLUCIÓN: Márgenes más grandes (b=60, l=60) para que los textos de los ejes no se corten
+        margin=dict(t=20, b=60, l=60, r=20),
+        
         xaxis_title_text="⚽ GOLES RIVER PLATE",
-        xaxis_title_font_size=14,
+        xaxis_title_font_size=16,
         xaxis_title_font_family="Rajdhani",
         xaxis_title_font_color=RED,
         xaxis_tickfont_size=14,
         xaxis_side="bottom",
+        
         yaxis_title_text=f"⚽ GOLES {rival.upper()}",
-        yaxis_title_font_size=14,
+        yaxis_title_font_size=16,
         yaxis_title_font_family="Rajdhani",
         yaxis_title_font_color=GRAY,
         yaxis_tickfont_size=14,
+        
         hoverlabel_bgcolor="#111827",
         hoverlabel_bordercolor=RED,
         hoverlabel_font_color="white",
@@ -391,7 +394,6 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
             st.markdown("#### Jugadores con mayor probabilidad de anotar hoy")
             df_gol = obtener_tabla_goleadores(titulares, df_plantilla, lr)
             
-            # Filtramos los 7 con más chance para el gráfico
             df_gol_top = df_gol.head(7).sort_values("% Prob. Gol", ascending=True)
             
             fig_gol = go.Figure(go.Bar(
@@ -427,7 +429,6 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
                 ["Jugador", "Posicion", "Nota", "xG_p90"]
             ].sort_values("Nota", ascending=False)
             
-            # MEJORA: Usamos column_config de Streamlit para transformar la tabla en un Dashboard
             st.dataframe(
                 df_xi_display,
                 use_container_width=True,
