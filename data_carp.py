@@ -8,8 +8,6 @@ from openpyxl import load_workbook
 import io
 import re
 
-# ── IMPORTAR EL MÓDULO PREDICTOR ─────────────────────────────────────────────
-# Asegurate de que predictor_module.py esté en la MISMA carpeta que este archivo
 from predictor_module import render_predictor
 
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
@@ -25,7 +23,6 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
-/* === VARIABLES DE COLOR === */
 :root {
     --red-primary:   #D0021B;
     --red-hover:     #A80016;
@@ -49,316 +46,67 @@ st.markdown("""
     --radius-lg:     16px;
 }
 
-/* === RESET & BASE === */
-html, body, [class*="css"] { 
-    font-family: 'Inter', sans-serif !important;
-}
-.main .block-container { 
-    padding: 1.5rem 2rem 3rem 2rem !important; 
-    max-width: 1400px;
-}
+html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+.main .block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1400px; }
 
-/* === SIDEBAR === */
-[data-testid="stSidebar"] {
-    background: var(--black) !important;
-    border-right: 3px solid var(--red-primary) !important;
-}
-[data-testid="stSidebar"] * {
-    color: var(--gray-200) !important;
-}
+[data-testid="stSidebar"] { background: var(--black) !important; border-right: 3px solid var(--red-primary) !important; }
+[data-testid="stSidebar"] * { color: var(--gray-200) !important; }
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stRadio label {
-    color: var(--gray-400) !important;
-    font-size: 11px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1.5px !important;
-    font-weight: 600 !important;
-    font-family: 'Rajdhani', sans-serif !important;
+    color: var(--gray-400) !important; font-size: 11px !important;
+    text-transform: uppercase !important; letter-spacing: 1.5px !important;
+    font-weight: 600 !important; font-family: 'Rajdhani', sans-serif !important;
 }
 [data-testid="stSidebar"] .stRadio div[role="radio"] p {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 15px !important;
-    color: var(--gray-200) !important;
+    font-family: 'Rajdhani', sans-serif !important; font-weight: 600 !important;
+    font-size: 15px !important; color: var(--gray-200) !important;
 }
 [data-testid="stSidebar"] [data-testid="stSelectbox"] > div > div {
-    background: #1a1a1a !important;
-    border: 1px solid #333 !important;
-    color: var(--white) !important;
-    border-radius: var(--radius-sm) !important;
+    background: #1a1a1a !important; border: 1px solid #333 !important;
+    color: var(--white) !important; border-radius: var(--radius-sm) !important;
 }
-[data-testid="stSidebar"] hr {
-    border-color: #2a2a2a !important;
-    margin: 1rem 0 !important;
-}
+[data-testid="stSidebar"] hr { border-color: #2a2a2a !important; margin: 1rem 0 !important; }
 
-/* === ENCABEZADO SIDEBAR === */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 4px 0 16px 0;
-}
-.sidebar-brand-text .title {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 32px;
-    color: var(--white) !important;
-    line-height: 1;
-    letter-spacing: 2px;
-}
-.sidebar-brand-text .subtitle {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
-    color: var(--red-primary) !important;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    font-weight: 700;
-}
+.sidebar-brand { display: flex; align-items: center; gap: 12px; padding: 4px 0 16px 0; }
+.sidebar-brand-text .title { font-family: 'Bebas Neue', cursive; font-size: 32px; color: var(--white) !important; line-height: 1; letter-spacing: 2px; }
+.sidebar-brand-text .subtitle { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--red-primary) !important; letter-spacing: 3px; text-transform: uppercase; font-weight: 700; }
 
-/* === SECCIÓN LABELS SIDEBAR === */
-.sidebar-section-label {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 10px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 2px !important;
-    color: #555 !important;
-    font-weight: 700 !important;
-    margin-bottom: 6px !important;
-    margin-top: 8px !important;
-}
+.sidebar-section-label { font-family: 'Rajdhani', sans-serif !important; font-size: 10px !important; text-transform: uppercase !important; letter-spacing: 2px !important; color: #555 !important; font-weight: 700 !important; margin-bottom: 6px !important; margin-top: 8px !important; }
 
-/* === TÍTULOS PRINCIPALES === */
-h1.page-title {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 48px !important;
-    color: var(--gray-900) !important;
-    letter-spacing: 3px !important;
-    margin: 0 0 4px 0 !important;
-    line-height: 1 !important;
-}
-.page-subtitle {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 600;
-    margin-bottom: 24px;
-}
-.section-title {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 26px !important;
-    color: var(--gray-800) !important;
-    letter-spacing: 2px !important;
-    margin: 0 0 12px 0 !important;
-}
-.section-title-red {
-    color: var(--red-primary) !important;
-}
+h1.page-title { font-family: 'Bebas Neue', cursive !important; font-size: 48px !important; color: var(--gray-900) !important; letter-spacing: 3px !important; margin: 0 0 4px 0 !important; line-height: 1 !important; }
+.page-subtitle { font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-bottom: 24px; }
+.section-title { font-family: 'Bebas Neue', cursive !important; font-size: 26px !important; color: var(--gray-800) !important; letter-spacing: 2px !important; margin: 0 0 12px 0 !important; }
+.section-title-red { color: var(--red-primary) !important; }
 
-/* === DIVISOR ROJO === */
-.red-divider {
-    height: 3px;
-    background: linear-gradient(90deg, var(--red-primary), transparent);
-    border: none;
-    margin: 8px 0 24px 0;
-    border-radius: 2px;
-}
+.red-divider { height: 3px; background: linear-gradient(90deg, var(--red-primary), transparent); border: none; margin: 8px 0 24px 0; border-radius: 2px; }
 
-/* === SCORE BOX === */
-.score-card {
-    background: linear-gradient(135deg, var(--black) 0%, #1a1a1a 100%);
-    border: 1px solid #2a2a2a;
-    border-left: 4px solid var(--red-primary);
-    border-radius: var(--radius-md);
-    padding: 20px 28px;
-    text-align: center;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-lg);
-    position: relative;
-    overflow: hidden;
-}
-.score-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, var(--red-primary), transparent);
-}
-.score-card .label {
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 11px;
-    color: var(--gray-400);
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    font-weight: 700;
-    margin-bottom: 8px;
-}
-.score-card .score {
-    font-family: 'Bebas Neue', cursive;
-    font-size: 52px;
-    color: var(--white);
-    line-height: 1;
-    letter-spacing: 4px;
-}
-.score-card .score .goals {
-    color: var(--red-primary);
-}
+.score-card { background: linear-gradient(135deg, var(--black) 0%, #1a1a1a 100%); border: 1px solid #2a2a2a; border-left: 4px solid var(--red-primary); border-radius: var(--radius-md); padding: 20px 28px; text-align: center; margin-bottom: 24px; box-shadow: var(--shadow-lg); position: relative; overflow: hidden; }
+.score-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, var(--red-primary), transparent); }
+.score-card .label { font-family: 'Rajdhani', sans-serif; font-size: 11px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 3px; font-weight: 700; margin-bottom: 8px; }
+.score-card .score { font-family: 'Bebas Neue', cursive; font-size: 52px; color: var(--white); line-height: 1; letter-spacing: 4px; }
+.score-card .score .goals { color: var(--red-primary); }
 
-/* === DATAFRAMES === */
-[data-testid="stDataFrame"] {
-    border-radius: var(--radius-md) !important;
-    overflow: hidden !important;
-    border: 1px solid var(--gray-200) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-[data-testid="stDataFrame"] table thead tr th {
-    background: var(--black) !important;
-    color: var(--white) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-size: 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    font-weight: 700 !important;
-    padding: 10px 16px !important;
-}
-[data-testid="stDataFrame"] table tbody tr:nth-child(even) td {
-    background: var(--gray-50) !important;
-}
-[data-testid="stDataFrame"] table tbody tr:hover td {
-    background: var(--red-light) !important;
-}
-[data-testid="stDataFrame"] table tbody tr td {
-    font-family: 'Inter', sans-serif !important;
-    font-size: 14px !important;
-    padding: 9px 16px !important;
-    color: var(--gray-800) !important;
-    border-bottom: 1px solid var(--gray-100) !important;
-}
+[data-testid="stDataFrame"] { border-radius: var(--radius-md) !important; overflow: hidden !important; border: 1px solid var(--gray-200) !important; box-shadow: var(--shadow-sm) !important; }
+[data-testid="stDataFrame"] table thead tr th { background: var(--black) !important; color: var(--white) !important; font-family: 'Rajdhani', sans-serif !important; font-size: 12px !important; text-transform: uppercase !important; letter-spacing: 1px !important; font-weight: 700 !important; padding: 10px 16px !important; }
+[data-testid="stDataFrame"] table tbody tr:nth-child(even) td { background: var(--gray-50) !important; }
+[data-testid="stDataFrame"] table tbody tr:hover td { background: var(--red-light) !important; }
+[data-testid="stDataFrame"] table tbody tr td { font-family: 'Inter', sans-serif !important; font-size: 14px !important; padding: 9px 16px !important; color: var(--gray-800) !important; border-bottom: 1px solid var(--gray-100) !important; }
 
-/* === SELECTBOXES & CONTROLS === */
-[data-testid="stSelectbox"] > div > div,
-[data-testid="stMultiSelect"] > div > div {
-    border-radius: var(--radius-sm) !important;
-    border-color: var(--gray-200) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 600 !important;
-}
-[data-testid="stSlider"] .stSlider > div { 
-    accent-color: var(--red-primary) !important;
-}
-.stSlider [data-testid="stThumbValue"] {
-    color: var(--red-primary) !important;
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-}
+[data-testid="stMetric"] { background: var(--white) !important; border: 1px solid var(--gray-200) !important; border-radius: var(--radius-md) !important; padding: 16px !important; box-shadow: var(--shadow-sm) !important; }
+[data-testid="stMetricValue"] { font-family: 'Bebas Neue', cursive !important; font-size: 32px !important; color: var(--red-primary) !important; }
+[data-testid="stMetricLabel"] { font-family: 'Rajdhani', sans-serif !important; text-transform: uppercase !important; letter-spacing: 1px !important; font-size: 11px !important; font-weight: 700 !important; color: var(--gray-400) !important; }
 
-/* === MÉTRICAS NATIVAS DE STREAMLIT === */
-[data-testid="stMetric"] {
-    background: var(--white) !important;
-    border: 1px solid var(--gray-200) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 16px !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-[data-testid="stMetricValue"] {
-    font-family: 'Bebas Neue', cursive !important;
-    font-size: 32px !important;
-    color: var(--red-primary) !important;
-}
-[data-testid="stMetricLabel"] {
-    font-family: 'Rajdhani', sans-serif !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: var(--gray-400) !important;
-}
+.info-box { background: var(--red-light); border-left: 3px solid var(--red-primary); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding: 10px 16px; margin-bottom: 16px; font-family: 'Rajdhani', sans-serif; font-size: 13px; color: var(--gray-600); font-weight: 500; }
 
-/* === INFO BOXES === */
-.info-box {
-    background: var(--red-light);
-    border-left: 3px solid var(--red-primary);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 10px 16px;
-    margin-bottom: 16px;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 13px;
-    color: var(--gray-600);
-    font-weight: 500;
-}
+.stTabs [data-baseweb="tab-list"] { gap: 4px; border-bottom: 2px solid var(--gray-200) !important; }
+.stTabs [data-baseweb="tab"] { font-family: 'Rajdhani', sans-serif !important; font-weight: 700 !important; font-size: 14px !important; text-transform: uppercase !important; letter-spacing: 1px !important; color: var(--gray-400) !important; border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important; padding: 10px 20px !important; }
+.stTabs [aria-selected="true"] { color: var(--red-primary) !important; border-bottom: 3px solid var(--red-primary) !important; background: var(--red-light) !important; }
 
-/* === TABS === */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 4px;
-    border-bottom: 2px solid var(--gray-200) !important;
-}
-.stTabs [data-baseweb="tab"] {
-    font-family: 'Rajdhani', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 14px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1px !important;
-    color: var(--gray-400) !important;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
-    padding: 10px 20px !important;
-}
-.stTabs [aria-selected="true"] {
-    color: var(--red-primary) !important;
-    border-bottom: 3px solid var(--red-primary) !important;
-    background: var(--red-light) !important;
-}
-
-/* === RADIO BUTTONS SIDEBAR === */
-[data-testid="stSidebar"] .stRadio > div {
-    gap: 2px !important;
-}
-[data-testid="stSidebar"] .stRadio > div > label {
-    border-radius: var(--radius-sm) !important;
-    padding: 8px 12px !important;
-    transition: background 0.15s !important;
-}
-[data-testid="stSidebar"] .stRadio > div > label:hover {
-    background: rgba(208,2,27,0.12) !important;
-}
-
-/* Customización del selector horizontal de localía */
-div.row-widget.stRadio > div {
-    flex-direction: row;
-    gap: 20px;
-    background: var(--gray-50);
-    padding: 10px 15px;
-    border-radius: var(--radius-md);
-    border: 1px solid var(--gray-200);
-}
-
-/* === COMPARADOR === */
-.player-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 16px;
-    font-family: 'Bebas Neue', cursive;
-    font-size: 22px;
-    letter-spacing: 2px;
-}
+.player-header { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-radius: var(--radius-md); margin-bottom: 16px; font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 2px; }
 .player-header-red  { background: linear-gradient(135deg, var(--red-primary), #ff2d3a); color: white; }
 .player-header-gray { background: linear-gradient(135deg, #374151, #6b7280); color: white; }
 
-/* === FOOTER === */
-.footer {
-    text-align: center;
-    padding: 24px 0 8px 0;
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 12px;
-    color: var(--gray-400);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    border-top: 1px solid var(--gray-200);
-    margin-top: 48px;
-}
+.footer { text-align: center; padding: 24px 0 8px 0; font-family: 'Rajdhani', sans-serif; font-size: 12px; color: var(--gray-400); letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid var(--gray-200); margin-top: 48px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -453,7 +201,7 @@ def cargar_datos_completos(ruta_excel):
             df['Jugador'] = df['Jugador'].apply(lambda x: re.sub(r'\s+', ' ', str(x)))
             reemplazos = {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','á':'a','é':'e','í':'i','ó':'o','ú':'u'}
             for con_tilde, sin_tilde in reemplazos.items():
-                df['Jugador'] = df['Jugador'].str.replace(con_tilde, sin_tilde)
+                df['Jugador'] = df['Jugador'].str.replace(con_tilde, sin_tilde, regex=False)
             if 'Minutos' in df.columns:
                 df['Minutos'] = pd.to_numeric(df['Minutos'], errors="coerce").fillna(0)
             else:
@@ -485,7 +233,7 @@ def extraer_imagen_incrustada(ruta_excel_str, nombre_hoja, indice_imagen=0):
                 img = ws._images[indice_imagen]
                 return img._data() if callable(img._data) else img._data
         return None
-    except:
+    except Exception:
         return None
 
 @st.cache_data
@@ -499,7 +247,8 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
                 if val in ['métrica', 'metrica']:
                     row_idx, col_idx = r, c
                     break
-            if row_idx is not None: break
+            if row_idx is not None:
+                break
         if row_idx is not None:
             df_team = df.iloc[row_idx+1:, col_idx:col_idx+3].copy()
             df_team.columns = df.iloc[row_idx, col_idx:col_idx+3].values
@@ -508,7 +257,7 @@ def extraer_estadisticas_equipo(ruta_excel_str, nombre_hoja):
             df_team = df_team.dropna(subset=[df_team.columns[1], df_team.columns[2]], how='all')
             return df_team
         return pd.DataFrame()
-    except:
+    except Exception:
         return pd.DataFrame()
 
 @st.cache_data
@@ -528,23 +277,28 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
                     g_rival = str(df.iloc[r, c+2]).strip()
                     return local, rival, g_local, g_rival
         return local, rival, g_local, g_rival
-    except:
+    except Exception:
         return "Local", "Rival", "?", "?"
+
+# BUG FIX 3: clean_goals definida fuera del loop para evitar closure bugs
+def _clean_goals(g_str):
+    m = re.match(r'^(\d+)', str(g_str).strip())
+    return int(m.group(1)) if m else 0
 
 @st.cache_data
 def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
     historial = {}
     for hoja in hojas:
         local, rival, g_local, g_rival = extraer_info_partido(ruta_excel_str, hoja)
-        if g_local == "?" or g_rival == "?": continue
+        if g_local == "?" or g_rival == "?":
+            continue
         is_river_local = 'River' in local
-        if condicion == "Local" and not is_river_local: continue
-        if condicion == "Visitante" and is_river_local: continue
-        def clean_goals(g_str):
-            m = re.match(r'^(\d+)', str(g_str).strip())
-            return int(m.group(1)) if m else 0
-        gl = clean_goals(g_local)
-        gv = clean_goals(g_rival)
+        if condicion == "Local" and not is_river_local:
+            continue
+        if condicion == "Visitante" and is_river_local:
+            continue
+        gl = _clean_goals(g_local)
+        gv = _clean_goals(g_rival)
         if is_river_local:
             equipo_rival = rival; gf = gl; gc = gv
         else:
@@ -554,9 +308,12 @@ def generar_historial_rivales(ruta_excel_str, hojas, condicion="Total"):
         historial[equipo_rival]['PJ'] += 1
         historial[equipo_rival]['GF'] += gf
         historial[equipo_rival]['GC'] += gc
-        if gf > gc: historial[equipo_rival]['PG'] += 1
-        elif gf < gc: historial[equipo_rival]['PP'] += 1
-        else: historial[equipo_rival]['PE'] += 1
+        if gf > gc:
+            historial[equipo_rival]['PG'] += 1
+        elif gf < gc:
+            historial[equipo_rival]['PP'] += 1
+        else:
+            historial[equipo_rival]['PE'] += 1
     df_hist = pd.DataFrame.from_dict(historial, orient='index').reset_index()
     if not df_hist.empty:
         df_hist.rename(columns={'index':'Rival'}, inplace=True)
@@ -574,14 +331,15 @@ def generar_historial_completo(condicion="Total"):
             hojas_validas = [h for h in xl.sheet_names if h not in hojas_omitir]
             for hoja in hojas_validas:
                 local, rival, g_local, g_rival = extraer_info_partido(str(ruta), hoja)
-                if g_local == "?" or g_rival == "?": continue
+                if g_local == "?" or g_rival == "?":
+                    continue
                 is_river_local = 'River' in local
-                if condicion == "Local" and not is_river_local: continue
-                if condicion == "Visitante" and is_river_local: continue
-                def clean_goals(g_str):
-                    m = re.match(r'^(\d+)', str(g_str).strip())
-                    return int(m.group(1)) if m else 0
-                gl = clean_goals(g_local); gv = clean_goals(g_rival)
+                if condicion == "Local" and not is_river_local:
+                    continue
+                if condicion == "Visitante" and is_river_local:
+                    continue
+                gl = _clean_goals(g_local)
+                gv = _clean_goals(g_rival)
                 if is_river_local:
                     equipo_rival = rival; gf = gl; gc = gv
                 else:
@@ -591,9 +349,12 @@ def generar_historial_completo(condicion="Total"):
                 historial[equipo_rival]['PJ'] += 1
                 historial[equipo_rival]['GF'] += gf
                 historial[equipo_rival]['GC'] += gc
-                if gf > gc: historial[equipo_rival]['PG'] += 1
-                elif gf < gc: historial[equipo_rival]['PP'] += 1
-                else: historial[equipo_rival]['PE'] += 1
+                if gf > gc:
+                    historial[equipo_rival]['PG'] += 1
+                elif gf < gc:
+                    historial[equipo_rival]['PP'] += 1
+                else:
+                    historial[equipo_rival]['PE'] += 1
         except Exception:
             continue
     df_hist = pd.DataFrame.from_dict(historial, orient='index').reset_index()
@@ -685,14 +446,14 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-# ── PREDICTOR (sin cargar el resto de datos) ──────────────────────────────────
+# ── PREDICTOR ─────────────────────────────────────────────────────────────────
 if menu == "Predictor de Partidos":
     page_header("🤖", "PREDICTOR DE PARTIDOS", f"Poisson + Montecarlo · Temporada {temporada_sel}")
     render_predictor(EXCEL_ACTUAL, apply_plotly_style_fn=apply_plotly_style)
     st.markdown("<div class='footer'>Data CARP · Club Atlético River Plate · Análisis de Rendimiento</div>", unsafe_allow_html=True)
     st.stop()
 
-# ── CARGA Y PROCESAMIENTO (solo para las otras páginas) ───────────────────────
+# ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
 df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
 if estado != "OK":
     st.error(estado)
@@ -708,21 +469,39 @@ if 'Posición' in df_raw.columns:
 else:
     posiciones = pd.DataFrame({'Jugador': df_raw['Jugador'].unique(), 'Posición': '—'})
 
-df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(
+# BUG FIX 1 & 6: agg de Quites separado para evitar if/else en dict
+_tiene_quites = 'Quites (Tackles)' in df_raw.columns
+_col_quites = 'Quites (Tackles)' if _tiene_quites else ('Quites' if 'Quites' in df_raw.columns else None)
+
+agg_dict = dict(
     Partidos=('Partido', 'nunique'),
     Promedio=('Nota SofaScore', 'mean'),
     Minutos=('Minutos', 'sum'),
     Goles=('Goles', 'sum'),
     Asistencias=('Asistencias', 'sum'),
-    Pases_Clave=('Pases Clave', 'sum'),
-    Quites=('Quites (Tackles)', 'sum') if 'Quites (Tackles)' in df_raw.columns else ('Quites', 'sum'),
     Intercepciones=('Intercepciones', 'sum'),
-    Tiros_Totales=('Tiros Totales', 'sum'),
-    Efectividad_Pases=('Efectividad Pases', 'mean')
 )
+if 'Pases Clave' in df_raw.columns:
+    agg_dict['Pases_Clave'] = ('Pases Clave', 'sum')
+if 'Tiros Totales' in df_raw.columns:
+    agg_dict['Tiros_Totales'] = ('Tiros Totales', 'sum')
+if 'Efectividad Pases' in df_raw.columns:
+    agg_dict['Efectividad_Pases'] = ('Efectividad Pases', 'mean')
+if _col_quites:
+    agg_dict['Quites_agg'] = (_col_quites, 'sum')
 
-if 'Quites' in df_agrupado.columns and 'Quites (Tackles)' not in df_agrupado.columns:
-    df_agrupado = df_agrupado.rename(columns={'Quites': 'Quites (Tackles)'})
+df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(**agg_dict)
+
+# Renombrar Quites a nombre estándar
+if 'Quites_agg' in df_agrupado.columns:
+    df_agrupado.rename(columns={'Quites_agg': 'Quites (Tackles)'}, inplace=True)
+else:
+    df_agrupado['Quites (Tackles)'] = 0
+
+# Columnas opcionales que pueden no existir
+for col_opt in ['Pases_Clave', 'Tiros_Totales', 'Efectividad_Pases']:
+    if col_opt not in df_agrupado.columns:
+        df_agrupado[col_opt] = 0
 
 df_agrupado = df_agrupado.merge(posiciones, on='Jugador')
 df_agrupado['Promedio'] = df_agrupado['Promedio'].round(2)
@@ -742,7 +521,7 @@ total_partidos_temporada = df_raw['Partido'].nunique()
 
 # ─── RESUMEN GENERAL ──────────────────────────────────────────────────────────
 if menu == "Resumen General":
-    page_header("🐔", f"PANEL GENERAL", f"Temporada {temporada_sel}")
+    page_header("🐔", "PANEL GENERAL", f"Temporada {temporada_sel}")
 
     total_partidos  = total_partidos_temporada
     promedio_equipo = df_raw['Nota SofaScore'].mean()
@@ -760,7 +539,9 @@ if menu == "Resumen General":
     tab1, tab2, tab3 = st.tabs(["📊 Promedios SofaScore", "⚽ Goles & Asistencias", "📋 Plantel Completo"])
 
     with tab1:
-        df_promedios = df_agrupado.dropna(subset=['Promedio'])[['Jugador','Posición','Promedio','Partidos','Forma (Últ. 5)']].sort_values('Promedio', ascending=False).reset_index(drop=True)
+        df_promedios = df_agrupado.dropna(subset=['Promedio'])[
+            ['Jugador','Posición','Promedio','Partidos','Forma (Últ. 5)']
+        ].sort_values('Promedio', ascending=False).reset_index(drop=True)
         df_promedios.index = df_promedios.index + 1
 
         if not df_promedios.empty:
@@ -888,10 +669,11 @@ elif menu == "Mapas de Rendimiento":
         if col_base in df_p90.columns:
             df_p90[col_p90] = (df_p90[col_base] / df_p90['Minutos'].replace(0,1)) * 90
     def scatter_cuadrantes(df, x_col, y_col, x_label, y_label, title):
-        if x_col not in df.columns or y_col not in df.columns: return go.Figure()
+        if x_col not in df.columns or y_col not in df.columns:
+            return go.Figure()
         x_mean = df[x_col].mean(); y_mean = df[y_col].mean()
         fig = px.scatter(df, x=x_col, y=y_col, color='Posición', hover_name='Jugador', color_discrete_map=COLORES_POSICION, size_max=18)
-        fig.update_traces(marker=dict(size=14, line=dict(width=1.5, color='white')), hovertemplate="<b>%{hovertext}</b><br>" + x_label + ": %{x:.2f}<br>" + y_label + ": %{y:.2f}<extra></extra>")
+        fig.update_traces(marker=dict(size=14, line=dict(width=1.5, color='white')), hovertemplate="<b>%{hovertext}</b><br>"+x_label+": %{x:.2f}<br>"+y_label+": %{y:.2f}<extra></extra>")
         fig.add_vline(x=x_mean, line_dash="dash", line_color="#9CA3AF", line_width=1, annotation_text=f"Prom. {x_label}: {x_mean:.2f}", annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"), annotation_position="top right")
         fig.add_hline(y=y_mean, line_dash="dash", line_color="#9CA3AF", line_width=1, annotation_text=f"Prom. {y_label}: {y_mean:.2f}", annotation_font=dict(family="Rajdhani", size=11, color="#6B7280"), annotation_position="right")
         apply_plotly_style(fig, title=title, xaxis_title=x_label, yaxis_title=y_label)
@@ -990,7 +772,8 @@ elif menu == "Análisis Individual":
             st.metric("Asistencias", int(df_j['Asistencias'].sum()))
             st.metric("Participación en Goles", int(df_j['Goles'].sum() + df_j['Asistencias'].sum()))
             q_col = 'Quites (Tackles)' if 'Quites (Tackles)' in df_j.columns else 'Quites'
-            st.metric("Recuperaciones Totales", int(df_j[q_col].sum() + df_j['Intercepciones'].sum()) if q_col in df_j.columns else 0)
+            recup = int(df_j[q_col].sum() + df_j['Intercepciones'].sum()) if q_col in df_j.columns else 0
+            st.metric("Recuperaciones Totales", recup)
 
 # ─── ESTADÍSTICAS DE EQUIPO ───────────────────────────────────────────────────
 elif menu == "Estadísticas de Equipo":
@@ -1021,8 +804,10 @@ elif menu == "Estadísticas de Equipo":
 elif menu == "Estadísticas Individuales":
     page_header("👤", "ESTADÍSTICAS INDIVIDUALES", "Top 7 por categoría")
     def extraer_exitosos(valor):
-        try: return int(str(valor).replace("'","").split('/')[0]) if isinstance(valor,(str,int,float)) else 0
-        except: return 0
+        try:
+            return int(str(valor).replace("'","").split('/')[0]) if isinstance(valor,(str,int,float)) else 0
+        except:
+            return 0
     partido_sel = st.selectbox("Seleccioná la fecha:", df_raw['Partido'].unique())
     hoja_orig = df_raw[df_raw['Partido'] == partido_sel]['Hoja_Original'].iloc[0]
     mostrar_marcador(EXCEL_ACTUAL, hoja_orig)
@@ -1033,21 +818,23 @@ elif menu == "Estadísticas Individuales":
     if 'Quites (Tackles)'   in df_p.columns: df_p = df_p.rename(columns={'Quites (Tackles)': 'Quites'})
     cols_num_ind = ['Efectividad Pases','Efectividad Duelos','Efectividad Regates','Tiros al Arco','Tiros Totales','Pases Clave','Intercepciones']
     for c in cols_num_ind:
-        if c in df_p.columns: df_p[c] = pd.to_numeric(df_p[c], errors='coerce').fillna(0)
+        if c in df_p.columns:
+            df_p[c] = pd.to_numeric(df_p[c], errors='coerce').fillna(0)
     categorias_ind = {
-        "⭐ Nota SofaScore": ("Nota SofaScore", ['Jugador','Nota SofaScore']),
-        "🛡️ Quites": ("Quites", ['Jugador','Quites']),
-        "🛑 Intercepciones": ("Intercepciones", ['Jugador','Intercepciones']),
-        "⚔️ Duelos Ganados": ("Duelos Ganados", ['Jugador','Duelos Ganados','Efectividad Duelos']),
-        "🎯 Pases Completados": ("Pases Completados", ['Jugador','Pases Completados','Efectividad Pases']),
-        "🔑 Pases Clave": ("Pases Clave", ['Jugador','Pases Clave']),
-        "⚡ Regates Exitosos": ("Regates Exitosos", ['Jugador','Regates Exitosos']),
-        "👟 Tiros al Arco": ("Tiros al Arco", ['Jugador','Tiros al Arco']),
+        "⭐ Nota SofaScore":   ("Nota SofaScore",    ['Jugador','Nota SofaScore']),
+        "🛡️ Quites":           ("Quites",            ['Jugador','Quites']),
+        "🛑 Intercepciones":   ("Intercepciones",    ['Jugador','Intercepciones']),
+        "⚔️ Duelos Ganados":   ("Duelos Ganados",    ['Jugador','Duelos Ganados','Efectividad Duelos']),
+        "🎯 Pases Completados":("Pases Completados", ['Jugador','Pases Completados','Efectividad Pases']),
+        "🔑 Pases Clave":      ("Pases Clave",       ['Jugador','Pases Clave']),
+        "⚡ Regates Exitosos": ("Regates Exitosos",  ['Jugador','Regates Exitosos']),
+        "👟 Tiros al Arco":    ("Tiros al Arco",     ['Jugador','Tiros al Arco']),
     }
     cols_grid = st.columns(2)
     for i, (label, (sort_col, show_cols)) in enumerate(categorias_ind.items()):
         show_cols_existentes = [c for c in show_cols if c in df_p.columns]
-        if sort_col not in df_p.columns: continue
+        if sort_col not in df_p.columns:
+            continue
         with cols_grid[i % 2]:
             st.markdown(f"<div class='section-title' style='font-size:20px;'>{label}</div>", unsafe_allow_html=True)
             df_top = df_p.nlargest(7, sort_col)[show_cols_existentes].reset_index(drop=True)
@@ -1062,8 +849,10 @@ elif menu == "Parado Táctico":
     partido = st.selectbox("Fecha:", list(hojas.keys()))
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
     img = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 0)
-    if img: st.image(img, use_container_width=True)
-    else: st.info("No hay imagen táctica disponible para este partido.")
+    if img:
+        st.image(img, use_container_width=True)
+    else:
+        st.info("No hay imagen táctica disponible para este partido.")
 
 # ─── MAPA DE TIROS ────────────────────────────────────────────────────────────
 elif menu == "Mapa de Tiros":
@@ -1074,12 +863,18 @@ elif menu == "Mapa de Tiros":
     c1, c2 = st.columns(2)
     with c1:
         img_r = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 1)
-        if img_r: st.markdown("<div class='section-title section-title-red'>🔴 RIVER PLATE</div>", unsafe_allow_html=True); st.image(img_r, use_container_width=True)
-        else: st.info("Sin mapa de tiros de River.")
+        if img_r:
+            st.markdown("<div class='section-title section-title-red'>🔴 RIVER PLATE</div>", unsafe_allow_html=True)
+            st.image(img_r, use_container_width=True)
+        else:
+            st.info("Sin mapa de tiros de River.")
     with c2:
         img_v = extraer_imagen_incrustada(str(EXCEL_ACTUAL), hojas[partido], 2)
-        if img_v: st.markdown("<div class='section-title'>⚫ RIVAL</div>", unsafe_allow_html=True); st.image(img_v, use_container_width=True)
-        else: st.info("Sin mapa de tiros del rival.")
+        if img_v:
+            st.markdown("<div class='section-title'>⚫ RIVAL</div>", unsafe_allow_html=True)
+            st.image(img_v, use_container_width=True)
+        else:
+            st.info("Sin mapa de tiros del rival.")
 
 # ─── CARA A CARA ──────────────────────────────────────────────────────────────
 elif menu == "Cara a Cara":
@@ -1118,14 +913,17 @@ elif menu == "Cara a Cara":
 
     def extraer_duelos(valor):
         try:
-            if isinstance(valor, str): return int(valor.replace("'","").split('/')[0])
+            if isinstance(valor, str):
+                return int(valor.replace("'","").split('/')[0])
             return int(valor)
-        except: return 0
+        except:
+            return 0
 
     def get_stats_p90(df_source, name, temporada):
         data = df_source[(df_source['Jugador'] == name) & (df_source['Temporada'] == temporada)].copy()
         mins = data['Minutos'].sum()
-        if mins == 0: return None
+        if mins == 0:
+            return None
         q_col = 'Quites (Tackles)' if 'Quites (Tackles)' in data.columns else 'Quites'
         duelos  = data['Duelos (Gan/Tot)'].apply(extraer_duelos).sum()   if 'Duelos (Gan/Tot)'   in data.columns else 0
         regates = data['Regates (Exit/Tot)'].apply(extraer_duelos).sum() if 'Regates (Exit/Tot)' in data.columns else 0
@@ -1136,11 +934,11 @@ elif menu == "Cara a Cara":
             'Nota': data['Nota SofaScore'].mean(),
             'Goles': (data['Goles'].sum() / mins * 90),
             'Asist': (data['Asistencias'].sum() / mins * 90),
-            'KP':    (data['Pases Clave'].sum() / mins * 90),
+            'KP':    (data['Pases Clave'].sum() / mins * 90) if 'Pases Clave' in data.columns else 0,
             'Efect_Pases': efect_pases,
             'Regates': (regates / mins * 90),
             'Duelos':  (duelos  / mins * 90),
-            'Quites':  (data[q_col].sum() / mins * 90),
+            'Quites':  (data[q_col].sum() / mins * 90) if q_col in data.columns else 0,
             'Inter':   (data['Intercepciones'].sum() / mins * 90),
         }
 
@@ -1178,19 +976,29 @@ elif menu == "Cara a Cara":
 
         def get_maximos_temporada(df, temporada):
             df_t = df[df['Temporada'] == temporada].copy()
-            if df_t.empty: return [1.0]*8
+            if df_t.empty:
+                return [1.0]*8
             q_c = 'Quites (Tackles)' if 'Quites (Tackles)' in df_t.columns else 'Quites'
             d_tot = df_t['Duelos (Gan/Tot)'].apply(extraer_duelos)   if 'Duelos (Gan/Tot)'   in df_t.columns else pd.Series(0, index=df_t.index)
             r_tot = df_t['Regates (Exit/Tot)'].apply(extraer_duelos) if 'Regates (Exit/Tot)' in df_t.columns else pd.Series(0, index=df_t.index)
-            df_t = df_t.copy(); df_t['_duelos'] = d_tot.values; df_t['_regates'] = r_tot.values
-            tg = df_t.groupby('Jugador').agg({'Goles':'sum','Asistencias':'sum','Pases Clave':'sum','Intercepciones':'sum','Minutos':'sum','Efectividad Pases':'mean','_duelos':'sum','_regates':'sum'})
-            tg[q_c] = df_t.groupby('Jugador')[q_c].sum()
+            df_t = df_t.copy()
+            df_t['_duelos']  = d_tot.values
+            df_t['_regates'] = r_tot.values
+            agg_cols = {'Goles':'sum','Asistencias':'sum','Intercepciones':'sum','Minutos':'sum','Efectividad Pases':'mean','_duelos':'sum','_regates':'sum'}
+            if 'Pases Clave' in df_t.columns:
+                agg_cols['Pases Clave'] = 'sum'
+            tg = df_t.groupby('Jugador').agg(agg_cols)
+            if q_c in df_t.columns:
+                tg[q_c] = df_t.groupby('Jugador')[q_c].sum()
+            else:
+                tg[q_c] = 0
             tg_valid = tg[tg['Minutos'] >= 300] if len(tg[tg['Minutos'] >= 300]) > 0 else tg
             mins_safe = tg_valid['Minutos'].replace(0, 1)
+            pk_max = ((tg_valid['Pases Clave']/mins_safe)*90).fillna(0).max() if 'Pases Clave' in tg_valid.columns else 0.01
             return [
                 ((tg_valid['Goles']/mins_safe)*90).fillna(0).max(),
                 ((tg_valid['Asistencias']/mins_safe)*90).fillna(0).max(),
-                ((tg_valid['Pases Clave']/mins_safe)*90).fillna(0).max(),
+                pk_max,
                 tg_valid['Efectividad Pases'].replace(0,np.nan).max() or 95.0,
                 ((tg_valid['_regates']/mins_safe)*90).fillna(0).max(),
                 ((tg_valid['_duelos']/mins_safe)*90).fillna(0).max(),
@@ -1210,7 +1018,8 @@ elif menu == "Cara a Cara":
         vals_j1_norm, vals_j1_raw = norm_vals(s_a, mx_global)
         vals_j2_norm, vals_j2_raw = norm_vals(s_b, mx_global)
 
-        def fmt_hover_val(val, idx): return f"{val:.1f}%" if idx == 3 else f"{val:.3f}"
+        def fmt_hover_val(val, idx):
+            return f"{val:.1f}%" if idx == 3 else f"{val:.3f}"
         text_j1 = [f"{labs[i]}: {fmt_hover_val(vals_j1_raw[i],i)}" for i in range(len(labs))] + [f"{labs[0]}: {fmt_hover_val(vals_j1_raw[0],0)}"]
         text_j2 = [f"{labs[i]}: {fmt_hover_val(vals_j2_raw[i],i)}" for i in range(len(labs))] + [f"{labs[0]}: {fmt_hover_val(vals_j2_raw[0],0)}"]
 
