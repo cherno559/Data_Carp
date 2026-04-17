@@ -236,57 +236,37 @@ def obtener_tabla_goleadores(titulares, df_plantilla, lam_r):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MÓDULO 3 ── VISUALIZACIONES
+# MÓDULO 3 ── NUEVO DISEÑO DE VISUALIZACIONES (BARRAS EN VEZ DE HEATMAP)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def fig_heatmap(sim, rival, style_fn=None):
-    MAX_G = 5
-    df = sim["df_resultados"]
+def fig_marcadores_top(sim, rival, style_fn=None):
+    df = sim["df_resultados"].copy()
+    
+    # Creamos un string legible: "River 2 - 0 Rival"
+    df["Marcador"] = "River " + df["River"].astype(str) + " - " + df["Rival"].astype(str) + f" {rival}"
+    
+    # Agarramos los 6 más probables y los damos vuelta para que el más grande quede arriba en el gráfico
+    df_top = df.sort_values("prob", ascending=False).head(6)
+    df_top = df_top.iloc[::-1]
 
-    z = np.zeros((MAX_G + 1, MAX_G + 1))
-    texto = [[""] * (MAX_G + 1) for _ in range(MAX_G + 1)]
-
-    for _, row in df.iterrows():
-        r, v = int(row["River"]), int(row["Rival"])
-        if r <= MAX_G and v <= MAX_G:
-            p = row["prob"] * 100
-            z[v][r] = p
-            texto[v][r] = f"{p:.1f}%" if p > 1.0 else ""
-
-    fig = go.Figure(go.Heatmap(
-        z=z,
-        x=[str(i) for i in range(MAX_G + 1)],
-        y=[str(i) for i in range(MAX_G + 1)],
-        text=texto,
-        texttemplate="<b>%{text}</b>",
-        colorscale=[[0, "rgba(0,0,0,0)"], [0.1, "#FEE2E2"], [1, RED]],
-        showscale=False
+    fig = go.Figure(go.Bar(
+        x=df_top["prob"] * 100,
+        y=df_top["Marcador"],
+        orientation='h',
+        marker_color=RED,
+        text=(df_top["prob"] * 100).apply(lambda x: f"{x:.1f}%"),
+        textposition='auto',
+        textfont=dict(color="white", size=14, family="Rajdhani")
     ))
 
-    # 🔥 LA MAGIA ESTÁ ACÁ: automargin=True obliga a Plotly a mostrar los ejes sí o sí.
     fig.update_layout(
         font_family="Rajdhani",
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        height=450,
-        margin=dict(t=30, b=30, l=30, r=30), # Dejamos que automargin haga el trabajo pesado
-        
-        xaxis=dict(
-            title=dict(text="⚽ GOLES RIVER PLATE", font=dict(size=15, color=RED, family="Rajdhani")),
-            tickfont=dict(size=14),
-            automargin=True,
-            side="bottom"
-        ),
-        yaxis=dict(
-            title=dict(text=f"⚽ GOLES {rival.upper()}", font=dict(size=15, color=GRAY, family="Rajdhani")),
-            tickfont=dict(size=14),
-            automargin=True
-        ),
-        hoverlabel=dict(
-            bgcolor="#111827",
-            bordercolor=RED,
-            font_color="white",
-        )
+        height=350,
+        margin=dict(l=0, r=0, t=30, b=0),
+        xaxis=dict(showgrid=True, gridcolor="#374151", title="% de Probabilidad Exacta"),
+        yaxis=dict(showgrid=False, title="", tickfont=dict(size=14, color=GRAY, family="Rajdhani", weight="bold"))
     )
 
     if style_fn:
@@ -372,7 +352,7 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        t1, t2, t3, t4 = st.tabs(["📊 Probabilidades", "⚽ Goleadores", "🎯 Marcadores", "🔬 Análisis XI"])
+        t1, t2, t3, t4 = st.tabs(["📊 Probabilidades", "🎯 Marcadores Exactos", "⚽ Goleadores", "📋 Análisis XI"])
 
         with t1:
             fig_prob = go.Figure(go.Bar(
@@ -390,9 +370,15 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
             st.plotly_chart(fig_prob, use_container_width=True)
 
         with t2:
-            st.markdown("#### Jugadores con mayor probabilidad de anotar hoy")
+            st.markdown("#### Top 6 Resultados Exactos Más Probables")
+            st.plotly_chart(
+                fig_marcadores_top(sim, rival_sel, apply_plotly_style_fn),
+                use_container_width=True
+            )
+
+        with t3:
+            st.markdown("#### Probabilidad de Anotar (Ranking)")
             df_gol = obtener_tabla_goleadores(titulares, df_plantilla, lr)
-            
             df_gol_top = df_gol.head(7).sort_values("% Prob. Gol", ascending=True)
             
             fig_gol = go.Figure(go.Bar(
@@ -409,43 +395,24 @@ def render_predictor(ruta_excel: Path, apply_plotly_style_fn=None):
                 paper_bgcolor="rgba(0,0,0,0)",
                 plot_bgcolor="rgba(0,0,0,0)",
                 xaxis=dict(showgrid=True, gridcolor="#374151", title="% Probabilidad de Gol"),
-                yaxis=dict(showgrid=False, title=""),
+                yaxis=dict(showgrid=False, title="", tickfont=dict(size=14, weight="bold")),
                 height=350,
-                margin=dict(l=0, r=0, t=30, b=0)
+                margin=dict(l=0, r=0, t=10, b=0)
             )
             st.plotly_chart(fig_gol, use_container_width=True)
 
-        with t3:
-            st.info("💡 **Guía:** El color más rojo indica el resultado exacto más probable. Se omiten resultados casi imposibles (< 1%) para mayor claridad.")
-            st.plotly_chart(
-                fig_heatmap(sim, rival_sel, apply_plotly_style_fn),
-                use_container_width=True
-            )
-
         with t4:
-            st.markdown("#### Rendimiento y Métrica del XI Inicial")
-            df_xi_display = df_plantilla[df_plantilla["Jugador"].isin(titulares)][
-                ["Jugador", "Posicion", "Nota", "xG_p90"]
-            ].sort_values("Nota", ascending=False)
+            st.markdown("#### 📋 Análisis Individual del XI Titular")
+            st.info("Ordenados por mayor expectativa de gol (xG/90).")
             
-            st.dataframe(
-                df_xi_display,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Jugador": st.column_config.TextColumn("👤 Jugador", width="medium"),
-                    "Posicion": st.column_config.TextColumn("📍 Posición", width="small"),
-                    "Nota": st.column_config.ProgressColumn(
-                        "⭐ Nota SofaScore Media",
-                        help="Calificación promedio reciente en la app SofaScore",
-                        format="%.2f",
-                        min_value=6.0,
-                        max_value=8.5,
-                    ),
-                    "xG_p90": st.column_config.NumberColumn(
-                        "⚽ Goles Esperados (xG/90')",
-                        help="Medida de probabilidad de gol por cada 90 minutos jugados",
-                        format="%.2f",
-                    )
-                }
-            )
+            df_xi = df_plantilla[df_plantilla["Jugador"].isin(titulares)].copy()
+            
+            # Formateamos para que quede súper claro
+            df_xi["Nota"] = df_xi["Nota"].apply(lambda x: f"⭐ {x:.2f}")
+            df_xi["xG/90"] = df_xi["xG_p90"].apply(lambda x: f"⚽ {x:.2f}")
+            
+            # Ordenamos por xG_p90 para mostrar quiénes son los más peligrosos
+            df_xi = df_xi.sort_values("xG_p90", ascending=False)
+            
+            # Usamos st.table que es la forma más directa y legible en Streamlit
+            st.table(df_xi[["Jugador", "Posicion", "Nota", "xG/90"]])
