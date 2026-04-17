@@ -263,31 +263,30 @@ def fig_heatmap(sim, rival, style_fn=None):
         showscale=False
     ))
 
+    # 🔥 LA MAGIA ESTÁ ACÁ: automargin=True obliga a Plotly a mostrar los ejes sí o sí.
     fig.update_layout(
         font_family="Rajdhani",
-        font_size=14,
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         height=450,
-        # SOLUCIÓN: Márgenes más grandes (b=60, l=60) para que los textos de los ejes no se corten
-        margin=dict(t=20, b=60, l=60, r=20),
+        margin=dict(t=30, b=30, l=30, r=30), # Dejamos que automargin haga el trabajo pesado
         
-        xaxis_title_text="⚽ GOLES RIVER PLATE",
-        xaxis_title_font_size=16,
-        xaxis_title_font_family="Rajdhani",
-        xaxis_title_font_color=RED,
-        xaxis_tickfont_size=14,
-        xaxis_side="bottom",
-        
-        yaxis_title_text=f"⚽ GOLES {rival.upper()}",
-        yaxis_title_font_size=16,
-        yaxis_title_font_family="Rajdhani",
-        yaxis_title_font_color=GRAY,
-        yaxis_tickfont_size=14,
-        
-        hoverlabel_bgcolor="#111827",
-        hoverlabel_bordercolor=RED,
-        hoverlabel_font_color="white",
+        xaxis=dict(
+            title=dict(text="⚽ GOLES RIVER PLATE", font=dict(size=15, color=RED, family="Rajdhani")),
+            tickfont=dict(size=14),
+            automargin=True,
+            side="bottom"
+        ),
+        yaxis=dict(
+            title=dict(text=f"⚽ GOLES {rival.upper()}", font=dict(size=15, color=GRAY, family="Rajdhani")),
+            tickfont=dict(size=14),
+            automargin=True
+        ),
+        hoverlabel=dict(
+            bgcolor="#111827",
+            bordercolor=RED,
+            font_color="white",
+        )
     )
 
     if style_fn:
