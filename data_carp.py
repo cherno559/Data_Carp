@@ -193,29 +193,46 @@ def cargar_datos_completos(ruta_excel):
         for hoja in xl.sheet_names:
             if hoja in hojas_omitir:
                 continue
-            df = pd.read_excel(ruta_excel, sheet_name=hoja)
+            
+            # Búsqueda dinámica de la fila de encabezados
+            df_temp = pd.read_excel(ruta_excel, sheet_name=hoja, header=None)
+            header_idx = None
+            for i in range(min(20, len(df_temp))):
+                row_vals = df_temp.iloc[i].astype(str).str.strip().str.lower().tolist()
+                if 'jugador' in row_vals:
+                    header_idx = i
+                    break
+            
+            if header_idx is None:
+                continue # Omitimos si no se encuentra la columna Jugador
+            
+            df = pd.read_excel(ruta_excel, sheet_name=hoja, header=header_idx)
             df.columns = df.columns.astype(str).str.strip()
-            if 'Jugador' not in df.columns:
-                continue
+            
             df['Jugador'] = df['Jugador'].fillna("").astype(str).str.strip().str.title()
             df['Jugador'] = df['Jugador'].apply(lambda x: re.sub(r'\s+', ' ', str(x)))
             reemplazos = {'Á':'A','É':'E','Í':'I','Ó':'O','Ú':'U','á':'a','é':'e','í':'i','ó':'o','ú':'u'}
             for con_tilde, sin_tilde in reemplazos.items():
                 df['Jugador'] = df['Jugador'].str.replace(con_tilde, sin_tilde, regex=False)
+            
             if 'Minutos' in df.columns:
                 df['Minutos'] = pd.to_numeric(df['Minutos'], errors="coerce").fillna(0)
             else:
                 df['Minutos'] = 0
+                
             df = df[(df['Jugador'] != "") & (df['Jugador'].str.lower() != "nan") & (df['Minutos'] > 0)]
+            
             if 'Nota SofaScore' in df.columns:
                 df['Nota SofaScore'] = pd.to_numeric(df['Nota SofaScore'], errors="coerce")
                 df = df[~(df['Nota SofaScore'] == 0)]
             else:
                 df['Nota SofaScore'] = np.nan
-            cols_num = ['Goles','Asistencias','Pases Clave','Quites (Tackles)','Intercepciones','Tiros Totales','Efectividad Pases']
+                
+            cols_num = ['Goles','Asistencias','Pases Clave','Quites (Tackles)','Quites','Intercepciones','Tiros Totales','Efectividad Pases']
             for col in cols_num:
                 if col in df.columns:
                     df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+                    
             df['Hoja_Original'] = hoja
             df['Partido'] = hoja
             partes.append(df)
@@ -280,7 +297,6 @@ def extraer_info_partido(ruta_excel_str, nombre_hoja):
     except Exception:
         return "Local", "Rival", "?", "?"
 
-# BUG FIX 3: clean_goals definida fuera del loop para evitar closure bugs
 def _clean_goals(g_str):
     m = re.match(r'^(\d+)', str(g_str).strip())
     return int(m.group(1)) if m else 0
@@ -431,6 +447,12 @@ with st.sidebar:
         menu = st.radio("", ["Predictor de Partidos", "Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    if st.button("🔄 RECARGAR DATOS"):
+        st.cache_data.clear()
+        st.rerun()
+        
+    st.markdown("<br>", unsafe_allow_html=True)
 
     col_b1, col_b2 = st.columns(2)
     with col_b1:
@@ -469,7 +491,6 @@ if 'Posición' in df_raw.columns:
 else:
     posiciones = pd.DataFrame({'Jugador': df_raw['Jugador'].unique(), 'Posición': '—'})
 
-# BUG FIX 1 & 6: agg de Quites separado para evitar if/else en dict
 _tiene_quites = 'Quites (Tackles)' in df_raw.columns
 _col_quites = 'Quites (Tackles)' if _tiene_quites else ('Quites' if 'Quites' in df_raw.columns else None)
 
@@ -492,13 +513,11 @@ if _col_quites:
 
 df_agrupado = df_raw.groupby('Jugador', as_index=False).agg(**agg_dict)
 
-# Renombrar Quites a nombre estándar
 if 'Quites_agg' in df_agrupado.columns:
     df_agrupado.rename(columns={'Quites_agg': 'Quites (Tackles)'}, inplace=True)
 else:
     df_agrupado['Quites (Tackles)'] = 0
 
-# Columnas opcionales que pueden no existir
 for col_opt in ['Pases_Clave', 'Tiros_Totales', 'Efectividad_Pases']:
     if col_opt not in df_agrupado.columns:
         df_agrupado[col_opt] = 0
