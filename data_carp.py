@@ -37,7 +37,6 @@ st.markdown("""
     --gray-800:      #1F2937;
     --gray-900:      #111827;
     --black:         #0A0A0A;
-    --gold:          #C9A84C;
     --shadow-sm:     0 1px 3px rgba(0,0,0,0.08);
     --shadow-md:     0 4px 12px rgba(0,0,0,0.10);
     --shadow-lg:     0 8px 32px rgba(0,0,0,0.14);
