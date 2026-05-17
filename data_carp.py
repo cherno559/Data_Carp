@@ -572,7 +572,7 @@ if menu == "Resumen General":
                 if p_str.startswith('DEF'): return '#3B82F6' # Azul
                 if p_str.startswith('MED') or p_str.startswith('VOL'): return '#22C55E' # Verde
                 if p_str.startswith('DEL') or p_str.startswith('ATA'): return '#EF4444' # Rojo
-                if p_str.startswith('POR') or p_str.startswith('ARQ'): return '#EF4444' # Rojo 
+                if p_str.startswith('POR') or p_str.startswith('ARQ'): return '#3B82F6' # Azul
                 return '#9CA3AF' # Gris si no encuentra coincidencia o no hay dato
 
             colores_barras = [obtener_color(p) for p in df_promedios['Posición']]
@@ -604,7 +604,7 @@ if menu == "Resumen General":
                 yaxis=dict(categoryorder='total ascending'),
             )
             st.plotly_chart(fig_prom, use_container_width=True)
-            st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Los colores representan la posición: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🟠 POR</b></div>", unsafe_allow_html=True)
+            st.markdown("<div class='info-box'>💡 La línea punteada roja indica el promedio del equipo. Los colores representan la posición: <b>🔵 DEF · 🟢 MED · 🔴 DEL · 🔵 POR</b></div>", unsafe_allow_html=True)
 
     with tab2:
         c1, c2 = st.columns(2)
