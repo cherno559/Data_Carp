@@ -114,7 +114,7 @@ COLORES_POSICION = {
     'DEF': '#3B82F6',
     'MED': '#22C55E',
     'DEL': '#EF4444',
-    'POR': '#F59E0B'
+    'POR': '#3B82F6'
 }
 
 PLOTLY_LAYOUT = dict(
