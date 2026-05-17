@@ -572,7 +572,7 @@ if menu == "Resumen General":
                 if p_str.startswith('DEF'): return '#3B82F6' # Azul
                 if p_str.startswith('MED') or p_str.startswith('VOL'): return '#22C55E' # Verde
                 if p_str.startswith('DEL') or p_str.startswith('ATA'): return '#EF4444' # Rojo
-                if p_str.startswith('POR') or p_str.startswith('ARQ'): return '#F59E0B' # Naranja
+                if p_str.startswith('POR') or p_str.startswith('ARQ'): return '#EF4444' # Rojo 
                 return '#9CA3AF' # Gris si no encuentra coincidencia o no hay dato
 
             colores_barras = [obtener_color(p) for p in df_promedios['Posición']]
