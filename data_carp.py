@@ -8,7 +8,7 @@ from openpyxl import load_workbook
 import io
 import re
 
-from predictor_module import render_predictor
+
 
 # ── CONFIGURACIÓN DE LA PÁGINA ───────────────────────────────────────────────
 st.set_page_config(
@@ -443,7 +443,7 @@ with st.sidebar:
         menu = st.radio("", ["Estadísticas de Equipo", "Estadísticas Individuales", "Parado Táctico", "Mapa de Tiros"], label_visibility="collapsed")
     elif categoria == "🔧 Herramientas":
         st.markdown("<div class='sidebar-section-label'>Sección</div>", unsafe_allow_html=True)
-        menu = st.radio("", ["Predictor de Partidos", "Cara a Cara", "Historial General"], label_visibility="collapsed")
+        menu = st.radio("", ["Cara a Cara", "Historial General"], label_visibility="collapsed")
 
     st.markdown("<br><br>", unsafe_allow_html=True)
     
@@ -466,13 +466,6 @@ with st.sidebar:
         DATA CARP · CLUB ATLÉTICO RIVER PLATE
     </div>
     """, unsafe_allow_html=True)
-
-# ── PREDICTOR ─────────────────────────────────────────────────────────────────
-if menu == "Predictor de Partidos":
-    page_header("🤖", "PREDICTOR DE PARTIDOS", f"Poisson + Montecarlo · Temporada {temporada_sel}")
-    render_predictor(EXCEL_ACTUAL, apply_plotly_style_fn=apply_plotly_style)
-    st.markdown("<div class='footer'>Data CARP · Club Atlético River Plate · Análisis de Rendimiento</div>", unsafe_allow_html=True)
-    st.stop()
 
 # ── CARGA Y PROCESAMIENTO ─────────────────────────────────────────────────────
 df_raw, estado = cargar_datos_completos(EXCEL_ACTUAL)
