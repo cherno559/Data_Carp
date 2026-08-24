@@ -848,7 +848,35 @@ elif menu == "Estadísticas de Equipo":
     page_header("⚖️", "ESTADÍSTICAS DE EQUIPO", "Comparativa por partido")
     hojas = df_raw.drop_duplicates('Partido')[['Partido','Hoja_Original']].set_index('Partido').to_dict()['Hoja_Original']
     partido = st.selectbox("Seleccioná la fecha:", list(hojas.keys()))
+    
+    # 1. Mostrar el resultado
     mostrar_marcador(EXCEL_ACTUAL, hojas[partido])
+    
+    # 2. Extraer y mostrar Goleadores y Asistidores de River
+    df_p = df_raw[df_raw['Partido'] == partido]
+    
+    goleadores = df_p[df_p['Goles'] > 0]
+    asistidores = df_p[df_p['Asistencias'] > 0]
+    
+    # Formatear los textos (agrega la cantidad entre paréntesis si hizo más de 1)
+    str_goles = ", ".join([f"{r['Jugador']}" if r['Goles'] == 1 else f"{r['Jugador']} ({int(r['Goles'])})" for _, r in goleadores.iterrows()]) if not goleadores.empty else "Ninguno"
+    str_asist = ", ".join([f"{r['Jugador']}" if r['Asistencias'] == 1 else f"{r['Jugador']} ({int(r['Asistencias'])})" for _, r in asistidores.iterrows()]) if not asistidores.empty else "Ninguno"
+    
+    st.markdown(f"""
+    <div style='background-color: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 12px 20px; margin-top: -10px; margin-bottom: 24px; display: flex; justify-content: space-around; text-align: center; box-shadow: var(--shadow-sm);'>
+        <div style='flex: 1;'>
+            <div style='font-family: "Rajdhani", sans-serif; font-size: 12px; color: var(--gray-400); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;'>⚽ Goleadores (River)</div>
+            <div style='font-family: "Inter", sans-serif; font-size: 14px; color: var(--gray-800); font-weight: 500;'>{str_goles}</div>
+        </div>
+        <div style='width: 1px; background-color: var(--gray-200); margin: 0 15px;'></div>
+        <div style='flex: 1;'>
+            <div style='font-family: "Rajdhani", sans-serif; font-size: 12px; color: var(--gray-400); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px;'>🅰️ Asistidores (River)</div>
+            <div style='font-family: "Inter", sans-serif; font-size: 14px; color: var(--gray-800); font-weight: 500;'>{str_asist}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 3. Mostrar el gráfico y la tabla del equipo
     df_equipo = extraer_estadisticas_equipo(str(EXCEL_ACTUAL), hojas[partido])
     if not df_equipo.empty:
         try:
