@@ -14,7 +14,7 @@ from datetime import datetime
 # =========================================================
 # 1. CONFIGURACIÓN
 # =========================================================
-EVENT_ID = 16667397
+EVENT_ID = 16671588
 
 # RUTA CORREGIDA: Se usan rutas relativas para que funcione perfecto en Linux
 RUTA_EXCEL = "Base_Datos_River_2026.xlsx"
